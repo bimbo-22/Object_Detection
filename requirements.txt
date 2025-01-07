@@ -1,0 +1,45 @@
+matplotlib
+seaborn
+torch
+mlflow
+boto3
+scikit-learn
+numpy
+pandas
+roboflow
+ultralytics
+
+
+
+
+# step 1
+# preprocess.py
+# get data from either of two sources and compare
+# potential 1 : https://universe.roboflow.com/master-dataset-curation/cctv-curation-dataset-poc
+# potential 2 coco dataset : https://gist.github.com/mkocabas/a6177fc00315403d31572e17700d7fd9
+# potential 3 : https://people.ee.ethz.ch/~csakarid/SFSU_synthetic/
+# potential 4 : DAWN dataset https://paperswithcode.com/datasets?q=DAWN&v=lst&o=match
+
+# Add to readme
+# train.py file
+# // step 2
+# // get dataset 
+# // reaugument to simulate lighting and weather conditions
+# import yolo from ultralytics
+# // train test split
+# // train model with varying hyperparameters use gridsearch cv or randomsearch
+
+# step 3
+# evaluate.py file
+# log model to mlflow 
+# track performance under various conditions metrics
+# try to find out why some predictions are failing
+
+# step 4
+# adjust hyperparameters based on evalution results
+# any other final adjustments 
+
+# last step
+# challenging 
+# deployment and testing
+
