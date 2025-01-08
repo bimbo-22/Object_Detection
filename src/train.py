@@ -1,6 +1,10 @@
 from ultralytics import YOLO
 from mlflow.models import infer_signature
 import mlflow
+from urllib.parse import urlparse
+import os
+from dotenv import load_dotenv
+import yaml
 
 # use python sdk
 model = YOLO("yolov8n.pt")

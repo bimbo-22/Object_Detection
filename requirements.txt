@@ -8,7 +8,7 @@ numpy
 pandas
 roboflow
 ultralytics
-
+opencv-python
 
 
 
