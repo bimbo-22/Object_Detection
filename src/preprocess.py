@@ -7,8 +7,7 @@ import glob
 import random
 import numpy as np
 
-# create a function then apply data augmentation on the images and
-# save them in same directory but call it augumented_images use params.yaml
+
 params = yaml.safe_load(open('params.yaml'))['preprocess']
 
 # Baseline Augmentation (Initial Training):
