@@ -1,0 +1,4 @@
+train: train/processed_images
+val: ../valid/images
+nc: 2
+names: ['2-Wheeler VRU', 'Pedestrian VRU']

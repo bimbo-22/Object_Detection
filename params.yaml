@@ -1,9 +1,12 @@
 preprocess:
-  input: 'datasets/train/images'
-  output: 'datasets/train/processed_images'
+  input_images: 'datasets/train/images'
+  input_labels: 'datasets/train/labels'
+  output_images: 'datasets/train/processed_images'
+  output_labels: 'datasets/train/processed_labels'
+  
 train: 
-  data: 'datasets/train/processed_images'
-  model: models/yolov8n.pt
+  data: 'data.yaml'
+  model: models/yolov8s.pt
   # other hyperparameters go here for training
 val: 
   data: 'datasets/valid/images'

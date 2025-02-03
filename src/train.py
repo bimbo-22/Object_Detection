@@ -6,12 +6,22 @@ import os
 from dotenv import load_dotenv
 import yaml
 
-# use python sdk
-model = YOLO("yolov8n.pt")
-print("model info: ",model.info())
-results = model.train(data="params.yaml", epochs=1, imgsz=640)
-print("results: ",results)
+params = yaml.safe_load(open('params.yaml'))['train']
+# params = yaml.safe_load(open('params.yaml'))['preprocess']
+
+
+
+
+def train(data_path,model_path):
+    model = YOLO(model_path)
+    print("model info: ",model.info())
+    results = model.train(data=data_path, epochs=1, imgsz=640)
+    return results
+    
 
 if __name__ == "__main__":
-    print("Script is executing.")
+    print("Script is executing..........")
+    results = train(params['data'],params['model']) 
+    print("results: ",results)
+
     

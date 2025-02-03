@@ -1,5 +1,7 @@
-.venv
+venv
 .env
 datasets
 model
 rough.ipynb
+models
+runs
