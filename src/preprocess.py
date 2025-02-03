@@ -125,5 +125,5 @@ def preprocess(input_path, output_image_path, input_label, output_label):
 
 if __name__ == "__main__":
     print("Script is executing.")
-    preprocess(params['input'], params['output'])
+    preprocess(params['input_images'],params['input_labels'], params['output_images'] params['output_labels'])
         
