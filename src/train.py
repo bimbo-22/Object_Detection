@@ -7,9 +7,12 @@ import os
 from dotenv import load_dotenv
 import yaml
 import shutil
+<<<<<<< HEAD
 from dotenv import load_dotenv
 load_dotenv()
 
+=======
+>>>>>>> bbd97b4 (updating train)
 
 params = yaml.safe_load(open('params.yaml'))['train']
 # params = yaml.safe_load(open('params.yaml'))['preprocess']
