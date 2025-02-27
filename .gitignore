@@ -1,7 +1,13 @@
 venv
 .env
-datasets
 model
 rough.ipynb
 models
 runs
+mlflow.db
+mlruns
+rough.py
+rougher.py
+
+
+/datasets
