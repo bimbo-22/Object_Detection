@@ -1,4 +1,6 @@
-train: train/processed_images
-val: ../valid/images
-nc: 2
-names: ['2-Wheeler VRU', 'Pedestrian VRU']
+train: datasets/train/processed/images
+val: datasets/raw/valid/images
+
+nc: 7
+names: ['bicycle', 'bus', 'car', 'motorcycle', 'person', 'traffic light', 'truck']
+

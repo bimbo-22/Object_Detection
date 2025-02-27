@@ -46,10 +46,10 @@ def rotate_bbox(cx,cy,w,h,angle,img_w,img_h):
     return new_x / img_w, new_y / img_h, w, h # keeping the width and height no need to change
     
 
-def preprocess(input_path, output_image_path, input_label, output_label):
+def preprocess(input_path, output_image,input_label, output_label):
     
-    if not os.path.exists(output_image_path):
-        os.makedirs(output_image_path)
+    if not os.path.exists(output_image):
+        os.makedirs(output_image)
     if not os.path.exists(output_label):
         os.makedirs(output_label)
         
@@ -58,6 +58,7 @@ def preprocess(input_path, output_image_path, input_label, output_label):
         input_image_path = os.path.join(input_path, filename)
         input_label_path = os.path.join(input_label, filename.replace('.jpg', '.txt')).replace('.png', '.txt')
         if not any(ext in filename.lower() for ext in ('.png', '.jpg', '.jpeg')):
+            print("file format is not supported")
             continue
         
         image = cv2.imread(input_image_path)
@@ -80,10 +81,10 @@ def preprocess(input_path, output_image_path, input_label, output_label):
         
         # Rotation
         rotation_angle = random.randint(-15, 15)
-        center = (width//2, height[0]//2)
+        center = (width//2, height//2)
         rotation_matrix = cv2.getRotationMatrix2D(center, rotation_angle, 1)
         rotated_image = cv2.warpAffine(image, rotation_matrix, (image.shape[1], image.shape[0]))
-        rotated_label = [rotate_bbox(cx, cy, w, h, rotation_angle, width. height) for class_id, cx,cy,w,h in label]
+        rotated_label = [rotate_bbox(cx, cy, w, h, rotation_angle, width,height) for class_id,cx,cy,w,h in label]
         augumented_images.append(rotated_image)
         augumented_labels.append(rotated_label)
         
@@ -92,27 +93,32 @@ def preprocess(input_path, output_image_path, input_label, output_label):
         hsv[..., 1] = np.clip(hsv[..., 1] * (1 + random.uniform(-10, 10)), 0, 255)
         saturated = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
         augumented_images.append(saturated)
+        augumented_labels.append(rotated_label)
         
         # Brightness
         brightness_factor = random.uniform(-0.10, 0.10)
         brightened = np.clip(image * (1 + brightness_factor), 0, 255).astype(np.uint8)
         augumented_images.append(brightened)
-        # no change to bounding box
+        augumented_labels.append(rotated_label)
         
         # Blur
         blur_factor = random.choice([3,5])
         blurred = cv2.GaussianBlur(image, (blur_factor, blur_factor), 0)
         augumented_images.append(blurred)
+        augumented_labels.append(rotated_label)
         
         # Noise
         noise_factor = np.random.normal(0,0.03,image.shape).astype(np.uint8)
         noisy = cv2.add(image, noise_factor)
         augumented_images.append(noisy)
+        augumented_labels.append(rotated_label)
         print(f"Augumented images created successfully.")
+        print(f"Total augmentations for {filename}: {len(augumented_images)}")
+
         
         for i, (aug_image, aug_label) in enumerate(zip(augumented_images, augumented_labels)):
-            output_image_path = os.path.join(output_image_path, f"{filename.split('.')[0]}_{i}.png")
-            output_label_path = os.path.join(output_label_path, f"{filename.split('.')[0]}_{i}.txt")
+            output_image_path = os.path.join(output_image, f"{filename.split('.')[0]}_{i}.png")
+            output_label_path = os.path.join(output_label, f"{filename.split('.')[0]}_{i}.txt")
             
             
             cv2.imwrite(output_image_path, aug_image)
@@ -125,5 +131,5 @@ def preprocess(input_path, output_image_path, input_label, output_label):
 
 if __name__ == "__main__":
     print("Script is executing.")
-    preprocess(params['input_images'],params['input_labels'], params['output_images'] params['output_labels'])
+    preprocess(params['input_images'],params['output_images'],params['input_labels'],params['output_labels'])
         

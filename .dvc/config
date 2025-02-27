@@ -1,0 +1,5 @@
+[core]
+    autostage = true
+    remote = origin
+['remote "origin"']
+    url = https://dagshub.com/bimbo-22/Object_Detection.dvc

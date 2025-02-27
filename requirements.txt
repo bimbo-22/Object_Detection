@@ -2,7 +2,6 @@ matplotlib
 seaborn
 torch
 mlflow
-boto3
 scikit-learn
 numpy
 pandas
@@ -10,6 +9,8 @@ roboflow
 ultralytics
 opencv-python
 python-dotenv
+dagshub
+dvc
 
 
 

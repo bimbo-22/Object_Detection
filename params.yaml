@@ -1,17 +1,13 @@
 preprocess:
-  input_images: 'datasets/train/images'
-  input_labels: 'datasets/train/labels'
-  output_images: 'datasets/train/processed_images'
-  output_labels: 'datasets/train/processed_labels'
+  input_images: 'datasets/raw/train/images'
+  input_labels: 'datasets/raw/train/labels'
+  output_images: 'datasets/processed/train/images'
+  output_labels: 'datasets/processed/train/labels'
   
 train: 
   data: 'data.yaml'
   model: models/yolov8s.pt
-  # other hyperparameters go here for training
 val: 
   data: 'datasets/valid/images'
 test: 
   data: 'datasets/test/images'
-
-nc: 2
-names: ['2-Wheeler VRU', 'Pedestrian VRU']
