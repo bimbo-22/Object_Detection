@@ -39,6 +39,8 @@ def train_model(model_path, epochs, batch):
         mlflow.log_metric("val_loss", best_model.results["val_loss"])
         mlflow.log_metric("train_loss", best_model.results["train_loss"])
         
+        mlflow.log_artifact(best_model, artifact_path="best_model")
+        
         tracking_uri_type_store = urlparse(mlflow_tracking_uri).scheme
         
         if tracking_uri_type_store != "file":
