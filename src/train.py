@@ -7,12 +7,9 @@ import os
 from dotenv import load_dotenv
 import yaml
 import shutil
-<<<<<<< HEAD
+
 from dotenv import load_dotenv
 load_dotenv()
-
-=======
->>>>>>> bbd97b4 (updating train)
 
 params = yaml.safe_load(open('params.yaml'))['train']
 # params = yaml.safe_load(open('params.yaml'))['preprocess']
@@ -33,15 +30,18 @@ def train_model(model_path, epochs, batch):
         mlflow.log_param("batch_size", batch)
         
         model = YOLO(model_path)
-        best_model = model.train(data=coco128.yaml, epochs=epochs, imgsz=640, batch=batch)
+        best_model = model.train(data="coco128.yaml", epochs=epochs, imgsz=640, batch=batch)
         
-        mlflow.log_metric("mAP", best_model.results["mAP"])
-        mlflow.log_metric("P", best_model.results["P"])
-        mlflow.log_metric("R", best_model.results["R"])
+        mlflow.log_metric("mAP", best_model.metrics.mAP50)
+        mlflow.log_metric("mAP50-95", best_model.metrics.mAP50_95)
+        mlflow.log_metric("Precision", best_model.metrics.precision)
+        mlflow.log_metric("Recall", best_model.metrics.recall)
         mlflow.log_metric("F1", best_model.results["F1"])
         mlflow.log_metric("val_loss", best_model.results["val_loss"])
         mlflow.log_metric("train_loss", best_model.results["train_loss"])
         
+        mlflow.log_artifact(best_model, artifact_path="best_model")
+
         tracking_uri_type_store = urlparse(mlflow_tracking_uri).scheme
         
         if tracking_uri_type_store != "file":
