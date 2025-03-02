@@ -3,7 +3,6 @@ venv
 model
 rough.ipynb
 models
-runs
 mlflow.db
 mlruns
 rough.py

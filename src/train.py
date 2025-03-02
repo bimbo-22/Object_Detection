@@ -22,7 +22,7 @@ mlflow_tracking_password = os.getenv("MLFLOW_TRACKING_PASSWORD")
             
 def train_model(model_path, epochs, batch):
     mlflow.set_tracking_uri(mlflow_tracking_uri)
-    with mlflow.start_run():
+    with mlflow.start_run(run_name= "Training on COCO Dataset"):
         mlflow.log_param("dataset", "COCO")
         mlflow.log_param("model_used", model_path)
         mlflow.log_param("epochs", epochs)
@@ -40,24 +40,24 @@ def train_model(model_path, epochs, batch):
         mlflow.log_metric("val_loss", best_model.results["val_loss"])
         mlflow.log_metric("train_loss", best_model.results["train_loss"])
         
-        mlflow.log_artifact(best_model, artifact_path="best_model")
+
+        best_model.save(model_path)
+        mlflow.log_artifact(model_path, artifact_path="best_model")
+
 
         tracking_uri_type_store = urlparse(mlflow_tracking_uri).scheme
         
         if tracking_uri_type_store != "file":
             try:
-                registered_model = mlflow.register_model(best_model, "COCO Trained Model")
+                model_uri = f"runs:/{mlflow.active_run().info.run_id}/best_model"
+                registered_model = mlflow.register_model(model_uri, "COCO Trained Model")
                 print("Model registered: ", registered_model)
             except mlflow.MlflowException as e:
                 print(f"Model registration failed: {e}")
         else:
             mlflow.register_model(best_model, "COCO Trained Model")
             print("Model not registered as tracking uri is file")
-        
-        
 
-
-   
 
 if __name__ == "__main__":
     print("Script is executing..........")
