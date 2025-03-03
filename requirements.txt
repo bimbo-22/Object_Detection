@@ -11,8 +11,7 @@ opencv-python
 python-dotenv
 dagshub
 dvc
-venv
-
+dvc-s3
 
 
 # step 1

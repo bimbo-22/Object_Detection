@@ -6,7 +6,7 @@ preprocess:
   
 train: 
   data: 'data.yaml'
-  model: models/yolov8s.pt
+  model: models/trained_on_coco-v1.pt
 val: 
   data: 'datasets/valid/images'
 test: 
