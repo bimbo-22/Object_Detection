@@ -24,15 +24,9 @@ def evaluate(model_path,data_path):
     
     with mlflow.start_run(run_name="Evaluation on Unified dataset"):
         model = YOLO(model_path)
-        evaluation = model.val(data=data_path,imgsz=640)
-        
-        mlflow.log_metric("mAP50", evaluation.box.map50)
-        mlflow.log_metric("mAP50-95", evaluation.box.map)
-        mlflow.log_metric("Precision", evaluation.box.precision)
-        mlflow.log_metric("Recall", evaluation.box.recall)
-        mlflow.log_metric("F1 Score", evaluation.box.f1)
+        evaluation = model.val(data=data_path)
 
-        print("Evaluation complete. Metrics logged in MLflow.")
+        return evaluation
         
         
         
