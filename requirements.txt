@@ -12,6 +12,8 @@ python-dotenv
 dagshub
 dvc
 dvc-s3
+albumentations
+
 
 
 # step 1

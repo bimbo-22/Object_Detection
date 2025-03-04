@@ -1,135 +1,103 @@
-import pandas as pd 
-import sys
 import os
 import yaml
 import cv2
-import glob
-import random
+import albumentations as A
 import numpy as np
-import stat
 
-
+# Load parameters from params.yaml
 params = yaml.safe_load(open('params.yaml'))['preprocess']
 
-# Baseline Augmentation (Initial Training):
-# Rotation: Between -15° and +15°
-# Saturation: Between -10% and +10%
-# Brightness: Between -10% and +10%
-# Exposure: Between -10% and +10%
-# Blur: Up to 2px
-# Noise: Up to 3% of pixels
+# Set random seed for reproducibility
+np.random.seed(42)
 
-# load label needed
+# Define augmentation pipeline
+transform = A.Compose([
+    # Rotation for variety
+    A.Rotate(limit=15, p=0.5),  # Rotate by up to 15 degrees, 50% chance
+    
+    # Low/Dim Light: Reduce brightness
+    A.RandomBrightnessContrast(brightness_limit=(-0.4, 0.0), contrast_limit=0.2, p=0.5),  # Darken only
+    
+    # Too Much Light: Increase brightness
+    A.RandomBrightnessContrast(brightness_limit=(0.2, 0.5), contrast_limit=0.2, p=0.5),  # Brighten only
+    
+    # Adverse Weather Conditions
+    A.RandomFog(fog_coef_lower=0.1, fog_coef_upper=0.3, alpha_coef=0.08, p=0.3),  # Fog, 30% chance
+    A.RandomRain(brightness_coefficient=0.9, drop_width=1, blur_value=3, p=0.3),  # Rain, 30% chance
+    A.RandomSnow(snow_point_lower=0.1, snow_point_upper=0.3, brightness_coeff=2.5, p=0.3),  # Snow, 30% chance
+    
+    # Optional: Noise for realism (less dominant)
+    A.GaussNoise(var_limit=(10.0, 30.0), p=0.2),  # Light noise, 20% chance
+], bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels'], clip=True))  # Clip to fix error
+
+# Load YOLO labels
 def load_labels(label_path):
     if not os.path.exists(label_path):
         return None
-    with open(label_path, 'r') as file :
-        labels = file.readlines()
-    return [list(map(float, line.strip().split())) for line in labels]
+    with open(label_path, 'r') as file:
+        labels = [list(map(float, line.strip().split())) for line in file]
+    return labels
 
-# save the aug yolo labels
-def save_labels(label_path, labels):
+# Save labels (used for both original and augmented)
+def save_labels(label_path, labels, class_labels):
     with open(label_path, 'w') as file:
-        for label in labels:
-            file.write(' '.join(map(str, label)) +  '\n')
+        for label, class_id in zip(labels, class_labels):
+            file.write(f"{int(class_id)} {' '.join(map(str, label))}\n")
 
-
-# rotating bounding box in respect to augumentation
-def rotate_bbox(cx,cy,w,h,angle,img_w,img_h):
-    angle = np.deg2rad(angle)
-    new_cx = cx * img_w
-    new_cy = cy * img_h
+# Preprocessing function
+def preprocess(input_path, output_image, input_label, output_label):
+    os.makedirs(output_image, exist_ok=True)
+    os.makedirs(output_label, exist_ok=True)
     
-    new_x = (new_cx - img_w / 2) * np.cos(angle) - (new_cy - img_h / 2) * np.sin(angle) + img_w / 2
-    new_y = (new_cx - img_w / 2) * np.cos(angle) + (new_cy - img_h / 2) * np.sin(angle) + img_w / 2
-    
-    return new_x / img_w, new_y / img_h, w, h # keeping the width and height no need to change
-    
-
-def preprocess(input_path, output_image,input_label, output_label):
-    
-    if not os.path.exists(output_image):
-        os.makedirs(output_image)
-    if not os.path.exists(output_label):
-        os.makedirs(output_label)
-        
     print("Starting to preprocess images and labels.")
     for filename in os.listdir(input_path):
-        input_image_path = os.path.join(input_path, filename)
-        input_label_path = os.path.join(input_label, filename.replace('.jpg', '.txt')).replace('.png', '.txt')
         if not any(ext in filename.lower() for ext in ('.png', '.jpg', '.jpeg')):
-            print("file format is not supported")
+            print(f"Skipping {filename}: Unsupported format")
             continue
+        
+        input_image_path = os.path.join(input_path, filename)
+        input_label_path = os.path.join(input_label, filename.replace('.jpg', '.txt').replace('.png', '.txt'))
         
         image = cv2.imread(input_image_path)
-        print(type(image))
         if image is None:
-            print(f"Could not read image {input_image_path}")
+            print(f"Failed to load image: {input_image_path}")
             continue
-        else:
-            print(f"Image loaded")
         
-        label = load_labels(input_label_path)
-        if label is None:
-            print(f"No Labels for {filename} found")
+        labels = load_labels(input_label_path)
+        if labels is None:
+            print(f"No labels found for {filename}")
             continue
-            
-        # Data Augumentation
-        height, width = image.shape[:2]
-        augumented_images = []
-        augumented_labels = []
         
-        # Rotation
-        rotation_angle = random.randint(-15, 15)
-        center = (width//2, height//2)
-        rotation_matrix = cv2.getRotationMatrix2D(center, rotation_angle, 1)
-        rotated_image = cv2.warpAffine(image, rotation_matrix, (image.shape[1], image.shape[0]))
-        rotated_label = [rotate_bbox(cx, cy, w, h, rotation_angle, width,height) for class_id,cx,cy,w,h in label]
-        augumented_images.append(rotated_image)
-        augumented_labels.append(rotated_label)
+        # Split into bboxes and class IDs
+        bboxes = [label[1:] for label in labels]  # [cx, cy, w, h]
+        class_labels = [label[0] for label in labels]  # class_id
         
-        # Saturation
-        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        hsv[..., 1] = np.clip(hsv[..., 1] * (1 + random.uniform(-10, 10)), 0, 255)
-        saturated = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-        augumented_images.append(saturated)
-        augumented_labels.append(rotated_label)
+        # Save original image
+        original_output_image_path = os.path.join(output_image, filename)
+        cv2.imwrite(original_output_image_path, image)
         
-        # Brightness
-        brightness_factor = random.uniform(-0.10, 0.10)
-        brightened = np.clip(image * (1 + brightness_factor), 0, 255).astype(np.uint8)
-        augumented_images.append(brightened)
-        augumented_labels.append(rotated_label)
+        # Save original labels
+        original_output_label_path = os.path.join(output_label, filename.replace('.jpg', '.txt').replace('.png', '.txt'))
+        save_labels(original_output_label_path, bboxes, class_labels)
+        print(f"Saved original: {original_output_image_path} and {original_output_label_path}")
         
-        # Blur
-        blur_factor = random.choice([3,5])
-        blurred = cv2.GaussianBlur(image, (blur_factor, blur_factor), 0)
-        augumented_images.append(blurred)
-        augumented_labels.append(rotated_label)
+        # Apply augmentations
+        augmented = transform(image=image, bboxes=bboxes, class_labels=class_labels)
+        aug_image = augmented['image']
+        aug_bboxes = augmented['bboxes']
+        aug_class_labels = augmented['class_labels']
         
-        # Noise
-        noise_factor = np.random.normal(0,0.03,image.shape).astype(np.uint8)
-        noisy = cv2.add(image, noise_factor)
-        augumented_images.append(noisy)
-        augumented_labels.append(rotated_label)
-        print(f"Augumented images created successfully.")
-        print(f"Total augmentations for {filename}: {len(augumented_images)}")
-
+        # Save augmented outputs
+        base_filename = filename.split('.')[0]
+        output_image_path = os.path.join(output_image, f"{base_filename}_aug.png")
+        output_label_path = os.path.join(output_label, f"{base_filename}_aug.txt")
         
-        for i, (aug_image, aug_label) in enumerate(zip(augumented_images, augumented_labels)):
-            output_image_path = os.path.join(output_image, f"{filename.split('.')[0]}_{i}.png")
-            output_label_path = os.path.join(output_label, f"{filename.split('.')[0]}_{i}.txt")
-            
-            
-            cv2.imwrite(output_image_path, aug_image)
-            save_labels(output_label_path, [[class_id] + list(map(float,bbox)) for class_id, *bbox in aug_label])
-            print(f"Image saved {output_image_path}")
-            print(f"Labels saved {output_label_path}")
-        
-    print("Preprocessing completed. ****")
-            
+        cv2.imwrite(output_image_path, aug_image)
+        save_labels(output_label_path, aug_bboxes, aug_class_labels)
+        print(f"Saved augmented: {output_image_path} and {output_label_path}")
+    
+    print("Preprocessing completed.")
 
 if __name__ == "__main__":
-    print("Script is executing.")
-    preprocess(params['input_images'],params['output_images'],params['input_labels'],params['output_labels'])
-        
+    print("Script executing...")
+    preprocess(params['input_images'], params['output_images'], params['input_labels'], params['output_labels'])
