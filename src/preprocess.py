@@ -7,7 +7,7 @@ import numpy as np
 # Load parameters from params.yaml
 params = yaml.safe_load(open('params.yaml'))['preprocess']
 
-# Set random seed for reproducibility
+
 np.random.seed(42)
 
 # Define augmentation pipeline
@@ -30,7 +30,7 @@ transform = A.Compose([
     A.GaussNoise(var_limit=(10.0, 30.0), p=0.2),  # Light noise, 20% chance
 ], bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels'], clip=True))  # Clip to fix error
 
-# Load YOLO labels
+
 def load_labels(label_path):
     if not os.path.exists(label_path):
         return None
@@ -38,13 +38,13 @@ def load_labels(label_path):
         labels = [list(map(float, line.strip().split())) for line in file]
     return labels
 
-# Save labels (used for both original and augmented)
+
 def save_labels(label_path, labels, class_labels):
     with open(label_path, 'w') as file:
         for label, class_id in zip(labels, class_labels):
             file.write(f"{int(class_id)} {' '.join(map(str, label))}\n")
 
-# Preprocessing function
+
 def preprocess(input_path, output_image, input_label, output_label):
     os.makedirs(output_image, exist_ok=True)
     os.makedirs(output_label, exist_ok=True)
@@ -68,26 +68,26 @@ def preprocess(input_path, output_image, input_label, output_label):
             print(f"No labels found for {filename}")
             continue
         
-        # Split into bboxes and class IDs
+        
         bboxes = [label[1:] for label in labels]  # [cx, cy, w, h]
         class_labels = [label[0] for label in labels]  # class_id
         
-        # Save original image
+        
         original_output_image_path = os.path.join(output_image, filename)
         cv2.imwrite(original_output_image_path, image)
         
-        # Save original labels
+        
         original_output_label_path = os.path.join(output_label, filename.replace('.jpg', '.txt').replace('.png', '.txt'))
         save_labels(original_output_label_path, bboxes, class_labels)
         print(f"Saved original: {original_output_image_path} and {original_output_label_path}")
         
-        # Apply augmentations
+        
         augmented = transform(image=image, bboxes=bboxes, class_labels=class_labels)
         aug_image = augmented['image']
         aug_bboxes = augmented['bboxes']
         aug_class_labels = augmented['class_labels']
         
-        # Save augmented outputs
+        
         base_filename = filename.split('.')[0]
         output_image_path = os.path.join(output_image, f"{base_filename}_aug.png")
         output_label_path = os.path.join(output_label, f"{base_filename}_aug.txt")
