@@ -1,5 +1,5 @@
-train: raw/train/images
-val: raw/valid/images
+train: processed/train/images
+val: processed/valid/images
 
 nc: 7
 names: ['bicycle', 'bus', 'car', 'motorcycle', 'person', 'traffic light', 'truck']
