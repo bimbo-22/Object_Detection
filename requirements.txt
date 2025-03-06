@@ -13,6 +13,8 @@ dagshub
 dvc
 dvc-s3
 albumentations
+optuna
+optuna-integration
 
 
 
