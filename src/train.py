@@ -22,7 +22,7 @@ mlflow_tracking_password = os.getenv("MLFLOW_TRACKING_PASSWORD")
             
 def train_model(model_path, epochs, batch):
     mlflow.set_tracking_uri(mlflow_tracking_uri)
-    with mlflow.start_run(run_name= "Training on COCO Dataset-2"):
+    with mlflow.start_run(run_name= "Training v8m on COCO Dataset"):
         mlflow.log_param("dataset", "COCO")
         mlflow.log_param("model_used", model_path)
         mlflow.log_param("epochs", epochs)

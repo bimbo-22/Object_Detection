@@ -19,7 +19,7 @@ mlflow_tracking_password = os.getenv("MLFLOW_TRACKING_PASSWORD")
 mlflow.set_tracking_uri(mlflow_tracking_uri)
 
 def fine_tune(data_path, model_path, epochs, batch):
-    with mlflow.start_run(run_name="Fine-tuning on custom dataset @100 epochs"):
+    with mlflow.start_run(run_name="Fine-tuning on custom dataset (v8m)"):
         mlflow.log_param("dataset", "unified_dataset")
         mlflow.log_param("model_used", model_path)
         mlflow.log_param("epochs", epochs)
@@ -81,4 +81,4 @@ def fine_tune(data_path, model_path, epochs, batch):
             print("Model not registered (tracking URI is a local file store).")
 
 if __name__ == "__main__":
-    fine_tune(params["data"], params["model"], 100, 16)
+    fine_tune(params["data"], params["model"], 50, 16)

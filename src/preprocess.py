@@ -4,33 +4,32 @@ import cv2
 import albumentations as A
 import numpy as np
 
-# Load parameters from params.yaml
+
 params = yaml.safe_load(open('params.yaml'))['preprocess']
 
 np.random.seed(42)
 
-# Define augmentation pipeline
+
 transform = A.Compose([
-    # Rotation for variety
-    A.Rotate(limit=15, p=0.5),  # Rotate by up to 15 degrees, 50% chance
     
-    # Horizontal flip
-    A.HorizontalFlip(p=0.5),  # 50% chance of flipping horizontally
+    A.Rotate(limit=15, p=0.5),  
     
-    # Low/Dim Light: Reduce brightness (less aggressive)
-    A.RandomBrightnessContrast(brightness_limit=(-0.3, 0.0), contrast_limit=0.1, p=0.3),  # 30% chance
+
+    A.HorizontalFlip(p=0.5),  
+
+    A.RandomBrightnessContrast(brightness_limit=(-0.3, 0.0), contrast_limit=0.1, p=0.3),  
     
-    # Too Much Light: Increase brightness (less aggressive)
-    A.RandomBrightnessContrast(brightness_limit=(0.1, 0.3), contrast_limit=0.1, p=0.3),  # 30% chance
+
+    A.RandomBrightnessContrast(brightness_limit=(0.1, 0.3), contrast_limit=0.1, p=0.3),  
     
-    # Adverse Weather Conditions (reduced probability)
-    A.RandomFog(fog_coef_lower=0.1, fog_coef_upper=0.3, alpha_coef=0.08, p=0.15),  # 15% chance
-    A.RandomRain(brightness_coefficient=0.9, drop_width=1, blur_value=3, p=0.15),  # 15% chance
-    A.RandomSnow(snow_point_lower=0.1, snow_point_upper=0.3, brightness_coeff=2.5, p=0.15),  # 15% chance
+
+    A.RandomFog(fog_coef_lower=0.1, fog_coef_upper=0.3, alpha_coef=0.08, p=0.15), 
+    A.RandomRain(brightness_coefficient=0.9, drop_width=1, blur_value=3, p=0.15),  
+    A.RandomSnow(snow_point_lower=0.1, snow_point_upper=0.3, brightness_coeff=2.5, p=0.15), 
     
-    # Optional: Noise for realism
-    A.GaussNoise(var_limit=(10.0, 30.0), p=0.2),  # Light noise, 20% chance
-], bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels'], clip=True))  # Clip to fix errors
+
+    A.GaussNoise(var_limit=(10.0, 30.0), p=0.2),  
+], bbox_params=A.BboxParams(format='yolo', label_fields=['class_labels'], clip=True))  
 
 def load_labels(label_path):
     if not os.path.exists(label_path):
