@@ -3,4 +3,12 @@ val: raw/valid/images
 
 nc: 7
 names: ['bicycle', 'bus', 'car', 'motorcycle', 'person', 'traffic light', 'truck']
+0, 1, 2, 3, 4, 5, 6
 
+bicycle: 0
+bus: 1
+car: 2
+motorcycle: 3
+person: 4
+traffic light: 5
+truck: 6
