@@ -1,6 +1,0 @@
-train: datasets/train/processed/images
-val: datasets/raw/valid/images
-
-nc: 7
-names: ['bicycle', 'bus', 'car', 'motorcycle', 'person', 'traffic light', 'truck']
-

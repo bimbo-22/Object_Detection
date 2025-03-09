@@ -5,11 +5,12 @@ import os
 from dotenv import load_dotenv
 import yaml
 import optuna
+import torch
 from dotenv import load_dotenv
 from optuna.integration import MLflowCallback
 load_dotenv()
 
-params = yaml.safe_load(open(params.yaml))['train']
+params = yaml.safe_load(open('params.yaml'))['train']
 
 mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 mlflow_tracking_username = os.getenv("MLFLOW_TRACKING_USERNAME")
@@ -20,7 +21,7 @@ def objective(trial):
     
     lr0 = trial.suggest_float("lr0", 1e-5, 1e-2, log=True)
     lrf = trial.suggest_float("lrf", 1e-5, 1e-1, log=True)
-    epochs = trial.suggest_int("epochs", 10, 15, 25, 50)
+    epochs = trial.suggest_categorical("epochs", [10, 15, 25, 50])
     batch_size = trial.suggest_categorical("batch_size", [8, 16, 32, 64])
     optimizer = trial.suggest_categorical("optimizer", ["SGD", "Adam", "AdamW"])
     imgsz = trial.suggest_categorical("imgsz", [512, 640, 768, 896])
@@ -29,13 +30,16 @@ def objective(trial):
     weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-2)
     
         # augmentation hyperparameters
-    mosaic = trial.suggest_float("mosaic", 0.0, 0.5) # less probability of using mosaic
-    mixup = trial.suggest_float("mixup", 0.0, 0.5) # less probability of using mixup
-    hsv_h = trial.suggest_float("hsv_h", 0.0, 0.05) # Reduced hue 
+    mosaic = trial.suggest_float("mosaic", 0.0, 0.5) 
+    mixup = trial.suggest_float("mixup", 0.0, 0.5)
+    hsv_h = trial.suggest_float("hsv_h", 0.0, 0.05) 
     hsv_s = trial.suggest_float("hsv_s", 0.0, 0.3)
     hsv_v = trial.suggest_float("hsv_v", 0.0, 0.3)
     
     model = YOLO(params['model'])
+
+    for param in model.model.parameters():
+        param.requires_grad = True
     
     results = model.train(
         data = params['data'],
@@ -60,7 +64,7 @@ def objective(trial):
         exist_ok = True
     )
         
-    mAP50 = results.metrics['metrics/mAP50(B)']
+    mAP50 = results.box.map50
     return mAP50
     
 def optimize(n_trials=20):
