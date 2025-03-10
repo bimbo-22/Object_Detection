@@ -1,6 +1,6 @@
 ### Project: Optimization of Object Detection Models for Varied Weather and Lighting Conditions
 
-This project focuses on optimizing object detection models to enhance their accuracy and robustness under diverse environmental conditions, including varying weather and lighting scenarios, both indoors and outdoors. The pipeline leverages advanced tools such as PyTorch for model training, MLflow for experiment tracking, and DVC for data and model versioning. Additionally, matplotlib and seaborn are utilized for data visualization and analysis.
+This project focuses on optimizing object detection models to enhance their accuracy and robustness under diverse environmental conditions, including varying weather and lighting scenarios, both indoors and outdoors. The pipeline leverages advanced tools such as PyTorch for model training, MLflow for experiment tracking, and DVC for data and model versioning. Additionally, matplotlib, openCV and seaborn are utilized for data visualization and analysis.
 
 ---
 
@@ -37,7 +37,7 @@ This project focuses on optimizing object detection models to enhance their accu
 - **train.py** script trains object detection models, leveraging the YOLO architecture from Ultralytics.
 - Implements a train-test split strategy.
 - experiment data augumentation strategies to enchance model robustness
-- Utilizes grid search or random search for hyperparameter optimization .
+- optuna for hyperparameter optimization .
 - Logs models and hyperparameters to MLflow for tracking and analysis.
 
 #### 3. Evaluation:
@@ -53,15 +53,7 @@ This project focuses on optimizing object detection models to enhance their accu
 - Implements final fine-tuning to improve model performance.
 
 #### 5. Deployment and Testing:
-
-# quite challenging
-
-# deployment and testing
-
-- Deploys the optimized model for real-world testing.( thinking about this)
-- Evaluates performance across diverse scenarios to validate robustness and reliability.
-
----
+crearting a simple web page for user to test out which of the two model
 
 ### Goals:
 
