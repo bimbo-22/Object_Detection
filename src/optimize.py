@@ -20,22 +20,22 @@ mlflow.set_tracking_uri(mlflow_tracking_uri)
 
 def objective(trial):
     
-    lr0 = trial.suggest_float("lr0", 1e-5, 1e-2, log=True)
-    lrf = trial.suggest_float("lrf", 1e-5, 1e-1, log=True)
-    epochs = trial.suggest_categorical("epochs", [10, 15, 25, 50])
-    batch_size = trial.suggest_categorical("batch_size", [8, 16, 32])
-    optimizer = trial.suggest_categorical("optimizer", ["SGD", "Adam", "AdamW"])
-    imgsz = trial.suggest_categorical("imgsz", [512, 640, 768])
-    warmup_epochs = trial.suggest_int("warmup_epochs", 0, 5)
-    momentum = trial.suggest_float("momentum", 0.85, 0.95)
-    weight_decay = trial.suggest_float("weight_decay", 1e-6, 1e-2)
+    lr0 = trial.suggest_float("lr0", 0.0003, 0.0007, log=True)
+    lrf = trial.suggest_float("lrf", 0.00005, 0.001, log=True)
+    epochs = trial.suggest_categorical("epochs", [50, 100, 150])
+    batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
+    optimizer = trial.suggest_categorical("optimizer", ["SGD",  "AdamW"])
+    imgsz = trial.suggest_categorical("imgsz", [640, 768, 896])
+    warmup_epochs = trial.suggest_int("warmup_epochs", 3, 5)
+    momentum = trial.suggest_float("momentum", 0.9, 0.95)
+    weight_decay = trial.suggest_float("weight_decay", 0.0005, 0.001)
     
         # augmentation hyperparameters
-    mosaic = trial.suggest_float("mosaic", 0.0, 0.5) 
-    mixup = trial.suggest_float("mixup", 0.0, 0.5)
-    hsv_h = trial.suggest_float("hsv_h", 0.0, 0.05) 
-    hsv_s = trial.suggest_float("hsv_s", 0.0, 0.3)
-    hsv_v = trial.suggest_float("hsv_v", 0.0, 0.3)
+    mosaic = trial.suggest_float("mosaic", 0.3, 0.7)  
+    mixup = trial.suggest_float("mixup", 0.3, 0.7)  
+    hsv_h = trial.suggest_float("hsv_h", 0.01, 0.03)  
+    hsv_s = trial.suggest_float("hsv_s", 0.1, 0.3)  
+    hsv_v = trial.suggest_float("hsv_v", 0.03, 0.1)
     
     model = YOLO(params['model'])
 
@@ -62,7 +62,7 @@ def objective(trial):
             hsv_s = hsv_s,
             hsv_v = hsv_v,
             device = 'cuda' if torch.cuda.is_available() else 'cpu',
-            project = "optimizing_cctv_model_v1",
+            project = "optimizing_cctv_model_v2",
             name = f'trial_{trial.number}',
             save = True,
             exist_ok = True
@@ -72,18 +72,18 @@ def objective(trial):
         return mAP50
     
 def optimize(n_trials=20):
-    # Set the MLflow experiment name explicitly
-    experiment_name = "optimizing_cctv_model_v1"
+
+    experiment_name = "optimizing_cctv_model_v2"
     mlflow.set_experiment(experiment_name)
 
-    # Create an Optuna study
+    
     study = optuna.create_study(
         direction="maximize",
         study_name=experiment_name,
         pruner=optuna.pruners.MedianPruner(n_warmup_steps=3),
     )
 
-    # Optimize the objective function
+    
     study.optimize(objective, n_trials=n_trials)
 
     # Print results
@@ -95,7 +95,7 @@ def optimize(n_trials=20):
 
 if __name__ == "__main__":
     print("Script is executing..........")
-    best_params = optimize(n_trials=20)
+    best_params = optimize(n_trials=30)
     print("Best hyperparameters: ", best_params)
 
 
