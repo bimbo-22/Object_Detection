@@ -6,5 +6,5 @@ preprocess:
   
 train: 
   data: 'data.yaml'
-  model: models/coco-trained-v1.pt
+  model: models/fine-tune-(v8m).pt
 
