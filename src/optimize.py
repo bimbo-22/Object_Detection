@@ -22,8 +22,8 @@ def objective(trial):
     
     lr0 = trial.suggest_float("lr0", 0.0003, 0.0007, log=True)
     lrf = trial.suggest_float("lrf", 0.00005, 0.001, log=True)
-    epochs = trial.suggest_categorical("epochs", [50, 100, 150])
-    batch_size = trial.suggest_categorical("batch_size", [16, 32, 64])
+    epochs = trial.suggest_categorical("epochs", [50, 100])
+    batch_size = trial.suggest_categorical("batch_size", [16, 32])
     optimizer = trial.suggest_categorical("optimizer", ["SGD",  "AdamW"])
     imgsz = trial.suggest_categorical("imgsz", [640, 768, 896])
     warmup_epochs = trial.suggest_int("warmup_epochs", 3, 5)

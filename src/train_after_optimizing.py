@@ -69,9 +69,5 @@ if __name__ == "__main__":
         'hsv_v': 0.2389650117953785,
     }
     
-    
-
-    
-
     train_model(params['model'], params['data'], best_params)
     print("Training completed.")
