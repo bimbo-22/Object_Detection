@@ -15,7 +15,7 @@ mlflow_tracking_password = os.getenv("MLFLOW_TRACKING_PASSWORD")
 def train_model(model_path, data_yaml, train_params):
 
     mlflow.set_tracking_uri(mlflow_tracking_uri)
-    with mlflow.start_run(run_name="Training on Combined Dataset with best params"):
+    with mlflow.start_run(run_name="Training fine-tuned-v8m on Combined Dataset with best params"):
         
         mlflow.log_params(train_params)
         mlflow.log_param("dataset", data_yaml)
@@ -52,22 +52,22 @@ if __name__ == "__main__":
     print("Script is executing..........")
     
     
-    best_params = {
-        'lr0': 0.0002958159924565695,
-        'lrf': 0.0009854257909620932,
-        'epochs': 50,  
-        'batch': 64,   
-        'optimizer': 'SGD',
-        'imgsz': 640,
-        'warmup_epochs': 4,
-        'momentum': 0.8922755763073302,
-        'weight_decay': 0.0033793257099669896,
-        'mosaic': 0.1261029783981223,
-        'mixup': 0.13469933725660385,
-        'hsv_h': 0.020334689099403707,
-        'hsv_s': 0.1408971815973312,
-        'hsv_v': 0.2389650117953785,
-    }
+    best_hyperparameters = {
+    'lr0': 0.0005906415419357465,
+    'lrf': 8.897493223633051e-05,
+    'epochs': 50,
+    'batch': 32,
+    'optimizer': 'SGD',
+    'imgsz': 640,
+    'warmup_epochs': 5,
+    'momentum': 0.9232124249680226,
+    'weight_decay': 0.0008132357503577005,
+    'mosaic': 0.5348898872083598,
+    'mixup': 0.3519106293530971,
+    'hsv_h': 0.027907848151362956,
+    'hsv_s': 0.19287164062335171,
+    'hsv_v': 0.0694866448664366
+}
     
-    train_model(params['model'], params['data'], best_params)
+    train_model(params['model'], params['data'], best_hyperparameters)
     print("Training completed.")

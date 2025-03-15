@@ -20,17 +20,17 @@ mlflow_tracking_password = os.getenv("MLFLOW_TRACKING_PASSWORD")
 
             
             
-def train_model(model_path, epochs, batch):
+def train_model(model_path,data_path, epochs, batch):
     mlflow.set_tracking_uri(mlflow_tracking_uri)
-    with mlflow.start_run(run_name= "Training v8m on COCO Dataset"):
-        mlflow.log_param("dataset", "COCO")
+    with mlflow.start_run(run_name= "Training fine-tuned v8m on unifiid Dataset"):
+        mlflow.log_param("dataset", "unified dataset")
         mlflow.log_param("model_used", model_path)
         mlflow.log_param("epochs", epochs)
         mlflow.log_param("img_size", 640) 
         mlflow.log_param("batch_size", batch)
         
         model = YOLO(model_path)
-        best_model = model.train(data="coco128.yaml", epochs=epochs, imgsz=640, batch=batch)
+        best_model = model.train(data=data_path, epochs=epochs, imgsz=640, batch=batch)
         
         mlflow.log_metric("mAP", best_model.metrics.mAP50)
         mlflow.log_metric("mAP50-95", best_model.metrics.mAP50_95)
@@ -50,18 +50,18 @@ def train_model(model_path, epochs, batch):
         if tracking_uri_type_store != "file":
             try:
                 model_uri = f"runs:/{mlflow.active_run().info.run_id}/best_model"
-                registered_model = mlflow.register_model(model_uri, "COCO Trained Model")
+                registered_model = mlflow.register_model(model_uri, "fine-tuned v8m Model")
                 print("Model registered: ", registered_model)
             except mlflow.MlflowException as e:
                 print(f"Model registration failed: {e}")
         else:
-            mlflow.register_model(best_model, "COCO Trained Model")
+            mlflow.register_model(best_model, "")
             print("Model not registered as tracking uri is file")
 
 
 if __name__ == "__main__":
     print("Script is executing..........")
-    results = train_model(params['model'], 50, 16) 
+    results = train_model(params['model'],params['data'], 50, 16)
     print("results: ",results)
 
     
