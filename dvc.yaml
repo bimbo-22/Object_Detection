@@ -2,7 +2,7 @@ stages:
   preprocess:
     cmd: python src/YOLO/preprocess.py
     deps:
-      - src/preprocess.py
+      - src/YOLO/preprocess.py
       - params.yaml
       - datasets/raw/train/images
       - datasets/raw/train/labels
@@ -16,45 +16,46 @@ stages:
       - datasets/processed/train/labels
   train_initial:
     cmd: python src/YOLO/train.py --mode initial
-      deps:
-        - src/train.py
-        - params.yaml
-        - data.yaml
-        - datasets/processed/train/images
-        - datasets/processed/train/labels
-      params:
-        - train.model_path
-      outs:
-        - models/initial_model.pt
-  fine-tune:
-    cmd: python src/YOLO/train.py --mode fine-tune
     deps:
-      - src/train.py
+      - src/YOLO/train.py
       - params.yaml
       - data.yaml
-      - models/train.pt
       - datasets/processed/train/images
       - datasets/processed/train/labels
     params:
-      - train.model_path
+      - train.model
+    outs:
+      - models/initial_model.pt
+  fine-tune:
+    cmd: python src/YOLO/train.py --mode fine-tune
+    deps:
+      - src/YOLO/train.py
+      - params.yaml
+      - data.yaml
+      - models/initial_model.pt
+      - datasets/processed/train/images
+      - datasets/processed/train/labels
+    params:
+      - train.model
     outs:
       - models/fine-tune-(v8m).pt
   evaluate:
     cmd: python src/YOLO/evaluate.py --model_path models/optimized_model.pt --data_path datasets/processed/data.yaml
     deps:
-      - src/evaluate.py
+      - src/YOLO/evaluate.py
       - params.yaml
       - data.yaml
       - models/fine-tune-(v8m).pt
-      - datasets/processed/test/images
-      - datasets/processed/test/labels
+      - datasets/processed/train/images
+      - datasets/processed/train/labels
     outs:
       - reports/evaluation.txt
   train_optimized:
-    cmd: python src/YOLO/train.py --mode optimized -- config results/best_params.yaml
+    cmd: python src/YOLO/train.py --mode optimized --config results/best_params.yaml
     deps:
-      - src/train.py
+      - src/YOLO/train.py
       - params.yaml
+      - data.yaml
       - results/best_params.yaml
       - datasets/processed/train/images
       - datasets/processed/train/labels
@@ -65,8 +66,9 @@ stages:
   optimize:
     cmd: python src/YOLO/optimize.py
     deps:
-      - src/optimize.py
+      - src/YOLO/optimize.py
       - params.yaml
+      - data.yaml
       - datasets/processed/train/images
       - datasets/processed/train/labels
     params:

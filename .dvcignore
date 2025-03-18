@@ -1,7 +1,6 @@
 .env
 venv/
-model/
-models/
+
 runs/
 .git/
 .gitignore
