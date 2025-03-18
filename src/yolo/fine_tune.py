@@ -25,15 +25,9 @@ def fine_tune(data_path, model_path, epochs, batch):
         mlflow.log_param("epochs", epochs)
         mlflow.log_param("img_size", 640)
         mlflow.log_param("batch_size", batch)
-
-        try:
-            model = YOLO(model_path)
-            print("Model Loaded Successfully.")
-        except Exception as e:
-            print(f"Failed to load model: {e}")
-            return
-
-        
+    
+        model = YOLO(model_path)
+   
         train_params = {
             "data": data_path,
             "epochs": epochs,
@@ -50,25 +44,16 @@ def fine_tune(data_path, model_path, epochs, batch):
         best_model = model.train(**train_params)
         print("Fine-tuning completed!")
 
+        metrics = best_model.metrics
+        mlflow.log_metric("mAP", metrics.box.map50)  
+        mlflow.log_metric("mAP50-95", metrics.box.map) 
+        mlflow.log_metric("Precision", metrics.box.p)
+        mlflow.log_metric("Recall", metrics.box.r)
 
-        try:
-
-            metrics = best_model.metrics
-            mlflow.log_metric("mAP", metrics.box.map50)  
-            mlflow.log_metric("mAP50-95", metrics.box.map) 
-            mlflow.log_metric("Precision", metrics.box.p)
-            mlflow.log_metric("Recall", metrics.box.r)
-        
-            mlflow.log_metric("F1", (2 * metrics.box.p * metrics.box.r) / (metrics.box.p + metrics.box.r + 1e-16))
-            print(" Metrics logged to MLflow.")
-        except Exception as e:
-            print(f" Failed to log metrics: {e}")
-
-        fine_tuned_model_path = "fine_tuned_model.pt"
+        fine_tuned_model_path = "models/fine_tuned_model.pt"
         best_model.save(fine_tuned_model_path)
         mlflow.log_artifact(fine_tuned_model_path, artifact_path="best_model")
-        print(f" Fine-tuned model saved: {fine_tuned_model_path}")
-
+    
         tracking_uri_type_store = urlparse(mlflow_tracking_uri).scheme
         if tracking_uri_type_store != "file":
             try:

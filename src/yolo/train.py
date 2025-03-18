@@ -59,7 +59,7 @@ def train_model(model_path,data_path, mode, config_path=None):
         model = YOLO(model_path)
         results = model.train(**train_params)
         
-        mlflow.log_metric("mAP", results.metrics.mAP50)
+        mlflow.log_metric("mAP", results.box.mAP50)
         mlflow.log_metric("mAP50-95", results.metrics.mAP50_95)
         mlflow.log_metric("Precision", results.metrics.precision)
         mlflow.log_metric("Recall", results.metrics.recall)
