@@ -1,6 +1,6 @@
-train: processed/train/images
-val: raw/valid/images
-test: raw/test/images
+train: datasets/YOLO/processed/train/images
+val: datasets/YOLO/raw/valid/images
+test: datasets/YOLO/raw/test/images
 
 nc: 5
 names: ['bus', 'car', 'motorcycle', 'person', 'truck']

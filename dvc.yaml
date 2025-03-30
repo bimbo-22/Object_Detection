@@ -1,77 +1,109 @@
 stages:
-  preprocess:
-    cmd: python src/YOLO/preprocess.py
+  # Preprocessing for YOLO training data
+  preprocess_YOLO_train:
+    cmd: python src/preprocess.py --model YOLO --dataset train
     deps:
-      - src/YOLO/preprocess.py
-      - yolo/params.yaml
-      - datasets/yolo/raw/train/images
-      - datasets/yolo/raw/train/labels
+      - src/preprocess.py
+      - params.yaml
+      - datasets/YOLO/raw/train/images
+      - datasets/YOLO/raw/train/labels
     params:
-      - preprocess.input_images
-      - preprocess.input_labels
-      - preprocess.output_images
-      - preprocess.output_labels
+      - YOLO.preprocess.train
     outs:
-      - datasets/yolo/processed/train/images
-      - datasets/yolo/processed/train/labels
-  train_initial:
+      - datasets/YOLO/processed/train/images
+      - datasets/YOLO/processed/train/labels
+
+  # Preprocessing for SSD training data (with augmentations)
+  preprocess_SSD_train:
+    cmd: python src/preprocess.py --model SSD --dataset train
+    deps:
+      - src/preprocess.py
+      - params.yaml
+      - datasets/SSD/raw/train/images
+      - datasets/SSD/raw/train/labels
+    params:
+      - SSD.preprocess.train
+    outs:
+      - datasets/SSD/processed/train.tfrecord
+
+  # Preprocessing for SSD validation data (no augmentations)
+  preprocess_SSD_valid:
+    cmd: python src/preprocess.py --model SSD --dataset valid
+    deps:
+      - src/preprocess.py
+      - params.yaml
+      - datasets/SSD/raw/valid/images
+      - datasets/SSD/raw/valid/labels
+    params:
+      - SSD.preprocess.valid
+    outs:
+      - datasets/SSD/raw/val.tfrecord
+
+  # Initial training for YOLO
+  train_initial_YOLO:
     cmd: python src/YOLO/train.py --mode initial
     deps:
       - src/YOLO/train.py
-      - yolo/params.yaml
-      - yolo/data.yaml
-      - datasets/yolo/processed/train/images
-      - datasets/yolo/processed/train/labels
+      - params.yaml
+      - YOLO/data.yaml
+      - datasets/YOLO/processed/train/images
+      - datasets/YOLO/processed/train/labels
     params:
-      - train.model
+      - YOLO.train
     outs:
-      - yolo/models/initial_model.pt
-  fine-tune:
+      - models/YOLO/initial_model.pt
+
+  # Fine-tuning for YOLO
+  fine-tune_YOLO:
     cmd: python src/YOLO/train.py --mode fine-tune
     deps:
       - src/YOLO/train.py
-      - yolo/params.yaml
-      - yolo/data.yaml
-      - models/yolo/initial_model.pt
-      - datasets/yolo/processed/train/images
-      - datasets/yolo/processed/train/labels
+      - params.yaml
+      - YOLO/data.yaml
+      - models/YOLO/initial_model.pt
+      - datasets/YOLO/processed/train/images
+      - datasets/YOLO/processed/train/labels
     params:
-      - train.model
+      - YOLO.train
     outs:
-      - models/yolo/fine-tune-(v8m).pt
-  evaluate:
-    cmd: python src/YOLO/evaluate.py --model_path models/optimized_model.pt --data_path datasets/processed/data.yaml
+      - models/YOLO/fine-tune-(v8m).pt
+
+  # Evaluation for YOLO
+  evaluate_YOLO:
+    cmd: python src/YOLO/evaluate.py --model_path models/YOLO/optimized_model.pt --data_path YOLO/data.yaml
     deps:
       - src/YOLO/evaluate.py
-      - yolo/params.yaml
-      - yolo/data.yaml
-      - models/yolo/fine-tune-(v8m).pt
-      - datasets/yolo/processed/train/images
-      - datasets/yolo/processed/train/labels
+      - params.yaml
+      - YOLO/data.yaml
+      - models/YOLO/optimized_model.pt
     outs:
-      - reports/evaluation.txt
-  train_optimized:
-    cmd: python src/YOLO/train.py --mode optimized --config results/best_params.yaml
-    deps:
-      - src/YOLO/train.py
-      - yolo/params.yaml
-      - yolo/data.yaml
-      - results/yolo/best_params.yaml
-      - datasets/yolo/processed/train/images
-      - datasets/yolo/processed/train/labels
-    params:
-      - train
-    outs:
-      - models/yolo/optimized_model.pt
-  optimize:
+      - reports/YOLO/evaluation.txt
+
+  # Optimization for YOLO
+  optimize_YOLO:
     cmd: python src/YOLO/optimize.py
     deps:
       - src/YOLO/optimize.py
-      - yolo/params.yaml
-      - yolo/data.yaml
-      - datasets/yolo/processed/train/images
-      - datasets/yolo/processed/train/labels
+      - params.yaml
+      - YOLO/data.yaml
+      - datasets/YOLO/processed/train/images
+      - datasets/YOLO/processed/train/labels
     params:
-      - train
-    outs: 
-      - results/yolo/best_params.yaml
+      - YOLO.train
+    outs:
+      - results/YOLO/best_params.yaml
+
+  # Optimized training for YOLO
+  train_optimized_YOLO:
+    cmd: python src/YOLO/train.py --mode optimized --config results/YOLO/best_params.yaml
+    deps:
+      - src/YOLO/train.py
+      - params.yaml
+      - YOLO/data.yaml
+      - results/YOLO/best_params.yaml
+      - datasets/YOLO/processed/train/images
+      - datasets/YOLO/processed/train/labels
+    params:
+      - YOLO.train
+    outs:
+      - models/YOLO/optimized_model.pt
