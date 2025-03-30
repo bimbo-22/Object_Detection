@@ -88,7 +88,7 @@ def train_model(model_path,data_path, mode, config_path=None):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description= "Train YOLO model in different odes")
-    parser.add_argument("--mode", options=["initial", "fine-tune", "optimized"], required="True")
+    parser.add_argument("--mode", choices=["initial", "fine-tune", "optimized"], required="True")
     parser.add_argument("--model_path", default=params['model'], help="Path to the model to be used")
     parser.add_argument("--data_path", default=params['data'], help="Path to the data to be used")
     parser.add_argument("--config_path", default=None, help="Path to the config file for optimized mode")

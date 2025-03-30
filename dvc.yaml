@@ -3,75 +3,75 @@ stages:
     cmd: python src/YOLO/preprocess.py
     deps:
       - src/YOLO/preprocess.py
-      - params.yaml
-      - datasets/raw/train/images
-      - datasets/raw/train/labels
+      - yolo/params.yaml
+      - datasets/yolo/raw/train/images
+      - datasets/yolo/raw/train/labels
     params:
       - preprocess.input_images
       - preprocess.input_labels
       - preprocess.output_images
       - preprocess.output_labels
     outs:
-      - datasets/processed/train/images
-      - datasets/processed/train/labels
+      - datasets/yolo/processed/train/images
+      - datasets/yolo/processed/train/labels
   train_initial:
     cmd: python src/YOLO/train.py --mode initial
     deps:
       - src/YOLO/train.py
-      - params.yaml
-      - data.yaml
-      - datasets/processed/train/images
-      - datasets/processed/train/labels
+      - yolo/params.yaml
+      - yolo/data.yaml
+      - datasets/yolo/processed/train/images
+      - datasets/yolo/processed/train/labels
     params:
       - train.model
     outs:
-      - models/initial_model.pt
+      - yolo/models/initial_model.pt
   fine-tune:
     cmd: python src/YOLO/train.py --mode fine-tune
     deps:
       - src/YOLO/train.py
-      - params.yaml
-      - data.yaml
-      - models/initial_model.pt
-      - datasets/processed/train/images
-      - datasets/processed/train/labels
+      - yolo/params.yaml
+      - yolo/data.yaml
+      - models/yolo/initial_model.pt
+      - datasets/yolo/processed/train/images
+      - datasets/yolo/processed/train/labels
     params:
       - train.model
     outs:
-      - models/fine-tune-(v8m).pt
+      - models/yolo/fine-tune-(v8m).pt
   evaluate:
     cmd: python src/YOLO/evaluate.py --model_path models/optimized_model.pt --data_path datasets/processed/data.yaml
     deps:
       - src/YOLO/evaluate.py
-      - params.yaml
-      - data.yaml
-      - models/fine-tune-(v8m).pt
-      - datasets/processed/train/images
-      - datasets/processed/train/labels
+      - yolo/params.yaml
+      - yolo/data.yaml
+      - models/yolo/fine-tune-(v8m).pt
+      - datasets/yolo/processed/train/images
+      - datasets/yolo/processed/train/labels
     outs:
       - reports/evaluation.txt
   train_optimized:
     cmd: python src/YOLO/train.py --mode optimized --config results/best_params.yaml
     deps:
       - src/YOLO/train.py
-      - params.yaml
-      - data.yaml
-      - results/best_params.yaml
-      - datasets/processed/train/images
-      - datasets/processed/train/labels
+      - yolo/params.yaml
+      - yolo/data.yaml
+      - results/yolo/best_params.yaml
+      - datasets/yolo/processed/train/images
+      - datasets/yolo/processed/train/labels
     params:
       - train
     outs:
-      - models/optimized_model.pt
+      - models/yolo/optimized_model.pt
   optimize:
     cmd: python src/YOLO/optimize.py
     deps:
       - src/YOLO/optimize.py
-      - params.yaml
-      - data.yaml
-      - datasets/processed/train/images
-      - datasets/processed/train/labels
+      - yolo/params.yaml
+      - yolo/data.yaml
+      - datasets/yolo/processed/train/images
+      - datasets/yolo/processed/train/labels
     params:
       - train
     outs: 
-      - results/best_params.yaml
+      - results/yolo/best_params.yaml

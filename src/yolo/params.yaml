@@ -5,6 +5,6 @@ preprocess:
   output_labels: 'datasets/processed/train/labels'
   
 train: 
-  data: 'data.yaml'
-  model: models/fine-tune-(v8m).pt
+  data: 'yolo/data.yaml'
+  model: models/yolo/fine-tune-(v8m).pt
 

@@ -1,0 +1,40 @@
+schema: '2.0'
+stages:
+  preprocess:
+    cmd: python src/YOLO/preprocess.py
+    deps:
+    - path: datasets/raw/train/images
+      hash: md5
+      md5: 2a854336861fe1449e1e1eb002431969.dir
+      size: 94759346
+      nfiles: 1826
+    - path: datasets/raw/train/labels
+      hash: md5
+      md5: 3471a144b8faacf7cb6812bfd8b348bd.dir
+      size: 469370
+      nfiles: 1943
+    - path: params.yaml
+      hash: md5
+      md5: b9aa2e507d941d910893728eb3b56264
+      size: 279
+    - path: src/YOLO/preprocess.py
+      hash: md5
+      md5: d4a50e63e9a3e6ec588efdbf4bbbfbd6
+      size: 3686
+    params:
+      params.yaml:
+        preprocess.input_images: datasets/raw/train/images
+        preprocess.input_labels: datasets/raw/train/labels
+        preprocess.output_images: datasets/processed/train/images
+        preprocess.output_labels: datasets/processed/train/labels
+    outs:
+    - path: datasets/processed/train/images
+      hash: md5
+      md5: 426d18415fe9d820c4df4a1f2ea23abe.dir
+      size: 1394230540
+      nfiles: 3651
+    - path: datasets/processed/train/labels
+      hash: md5
+      md5: 55b36d9f8c87a27d3e21ac48ee53b358.dir
+      size: 1302108
+      nfiles: 3651
