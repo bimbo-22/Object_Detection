@@ -2,7 +2,6 @@ venv
 .env
 model
 rough.ipynb
-models
 mlflow.db
 mlruns
 rough.py
@@ -13,6 +12,7 @@ cls
 runs
 optimizing_cctv_model
 optimizing_cctv_model_v2
-
+Roboflow MobileNetSSDv2.ipynb
+ssd_resnet101_v1_fpn_640x640_coco17_tpu-8/ 
 
 
