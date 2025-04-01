@@ -13,6 +13,7 @@ runs
 optimizing_cctv_model
 optimizing_cctv_model_v2
 Roboflow MobileNetSSDv2.ipynb
-ssd_resnet101_v1_fpn_640x640_coco17_tpu-8/ 
-
-
+ssd_resnet101_v1_fpn_640x640_coco17_tpu-8/
+models/SSD/checkpoint/*
+models/SSD/model.ckpt.data-00000-of-00001
+checkpoint
