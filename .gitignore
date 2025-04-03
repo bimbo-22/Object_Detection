@@ -1,6 +1,6 @@
 venv
 .env
-model
+models
 rough.ipynb
 mlflow.db
 mlruns
@@ -17,3 +17,9 @@ ssd_resnet101_v1_fpn_640x640_coco17_tpu-8/
 models/SSD/checkpoint/*
 models/SSD/model.ckpt.data-00000-of-00001
 checkpoint
+model
+dist/
+models_backup/
+object_detection.egg-info/
+setup (1).py
+setup.py

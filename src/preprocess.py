@@ -6,13 +6,15 @@ import numpy as np
 import tensorflow as tf
 from object_detection.utils import dataset_util
 import argparse
+import sys
+import os
+# Add 'models/research' to the Python path, relative to the script’s location
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'models', 'research'))
 
-# Load parameters from params.yaml
-params = yaml.safe_load(open('params.yaml'))['preprocess']
-
+# Load the entire params.yaml
+params = yaml.safe_load(open('params.yaml'))
 
 np.random.seed(42)
-
 
 transform = A.Compose([
     A.Rotate(limit=15, p=0.5),
@@ -51,7 +53,6 @@ def create_tf_example(image, bboxes, class_labels, filename):
         cx, cy, w, h = bbox
         class_id = int(class_id)
         classes.append(class_id)
-        # Convert YOLO center format to SSD corner format
         xmin = cx - w / 2
         xmax = cx + w / 2
         ymin = cy - h / 2
@@ -60,7 +61,7 @@ def create_tf_example(image, bboxes, class_labels, filename):
         xmaxs.append(xmax)
         ymins.append(ymin)
         ymaxs.append(ymax)
-        classes_text.append(str(class_id).encode('utf8'))  # Placeholder for class text
+        classes_text.append(str(class_id).encode('utf8'))
 
     tf_example = tf.train.Example(features=tf.train.Features(feature={
         'image/height': dataset_util.int64_feature(height),
@@ -102,16 +103,14 @@ def preprocess_yolo(input_path, output_image, input_label, output_label):
             print(f"No labels found for {filename}")
             continue
         
-        bboxes = [label[1:] for label in labels]  # [cx, cy, w, h]
-        class_labels = [label[0] for label in labels]  # class_id
+        bboxes = [label[1:] for label in labels]
+        class_labels = [label[0] for label in labels]
         
-        # Save original
         original_output_image_path = os.path.join(output_image, filename)
         cv2.imwrite(original_output_image_path, image)
         original_output_label_path = os.path.join(output_label, filename.replace('.jpg', '.txt').replace('.png', '.txt'))
         save_labels(original_output_label_path, bboxes, class_labels)
         print(f"Saved original: {original_output_image_path} and {original_output_label_path}")
-        
         
         augmented = transform(image=image, bboxes=bboxes, class_labels=class_labels)
         aug_image = augmented['image']
@@ -152,21 +151,19 @@ def preprocess_ssd(input_path, input_label, output_tfrecord, apply_augmentation=
             print(f"No labels found for {filename}")
             continue
         
-        bboxes = [label[1:] for label in labels]  # [cx, cy, w, h]
-        class_labels = [label[0] for label in labels]  # class_id
+        bboxes = [label[1:] for label in labels]
+        class_labels = [label[0] for label in labels]
         
-        # Create TFExample 
         tf_example = create_tf_example(image, bboxes, class_labels, filename)
         writer.write(tf_example.SerializeToString())
         print(f"Added original {filename} to TFRecord")
-        
         
         if apply_augmentation:
             augmented = transform(image=image, bboxes=bboxes, class_labels=class_labels)
             aug_image = augmented['image']
             aug_bboxes = augmented['bboxes']
             aug_class_labels = augmented['class_labels']
-            if aug_bboxes:  
+            if aug_bboxes:
                 aug_filename = f"{filename.split('.')[0]}_aug.jpg"
                 tf_example_aug = create_tf_example(aug_image, aug_bboxes, aug_class_labels, aug_filename)
                 writer.write(tf_example_aug.SerializeToString())
@@ -176,7 +173,6 @@ def preprocess_ssd(input_path, input_label, output_tfrecord, apply_augmentation=
     print("SSD preprocessing completed.")
 
 if __name__ == "__main__":
-    
     parser = argparse.ArgumentParser(description='Preprocess data for YOLO or SSD')
     parser.add_argument('--model', choices=['yolo', 'ssd'], required=True, help='Model type (yolo or ssd)')
     parser.add_argument('--dataset', choices=['train', 'valid'], required=True, help='Dataset type (train or valid)')
@@ -185,16 +181,16 @@ if __name__ == "__main__":
     print(f"Script executing for model: {args.model}, dataset: {args.dataset}")
     
     if args.model == 'yolo':
-        
-        input_images = params['input_images']
-        input_labels = params['input_labels']
-        output_images = params['output_images']
-        output_labels = params['output_labels']
+        preprocess_params = params['YOLO']['preprocess']['train']
+        input_images = preprocess_params['input_images']
+        input_labels = preprocess_params['input_labels']
+        output_images = preprocess_params['output_images']
+        output_labels = preprocess_params['output_labels']
         preprocess_yolo(input_images, output_images, input_labels, output_labels)
     elif args.model == 'ssd':
-        
-        input_images = params['ssd'][args.dataset]['input_images']
-        input_labels = params['ssd'][args.dataset]['input_labels']
-        output_tfrecord = params['ssd'][args.dataset]['output_tfrecord']
+        preprocess_params = params['SSD']['preprocess'][args.dataset]
+        input_images = preprocess_params['input_images']
+        input_labels = preprocess_params['input_labels']
+        output_tfrecord = preprocess_params['output_tfrecord']
         apply_augmentation = (args.dataset == 'train')
         preprocess_ssd(input_images, input_labels, output_tfrecord, apply_augmentation)

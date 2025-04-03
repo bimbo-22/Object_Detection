@@ -19,6 +19,10 @@ SSD:
       input_images: 'datasets/raw/valid/images'
       input_labels: 'datasets/raw/valid/labels'
       output_tfrecord: 'datasets/ssd/raw/val.tfrecord'
+  train:
+    optimized:
+      learning_rate: 0.01
+      batch_size: 32
   
 
 
