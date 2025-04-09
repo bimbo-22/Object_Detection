@@ -1,7 +1,7 @@
 import argparse
 import tensorflow as tf
-from object_detection import model_lib_v2
-from object_detection.utils import config_util
+from models.research.object_detection import model_lib_v2
+from models.research.object_detection.utils import config_util
 import mlflow
 import os
 import yaml
@@ -15,7 +15,7 @@ mlflow_tracking_username = os.getenv("MLFLOW_TRACKING_USERNAME")
 mlflow_tracking_password = os.getenv("MLFLOW_TRACKING_PASSWORD")
 
 def evaluate_model(model_dir, config_path):
-    mlflow.set_trackinng_uri(mlflow_tracking_uri)
+    mlflow.set_tracking_uri(mlflow_tracking_uri)
     with mlflow.start_run(run_name="Evaluating SSD on Unified dataset"):
         pipeline_config = config_util.get_configs_from_pipeline_file(config_path)
         

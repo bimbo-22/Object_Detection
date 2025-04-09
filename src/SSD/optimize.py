@@ -1,7 +1,7 @@
 import optuna
 import tensorflow as tf
-from tensorflow.keras import model_lib_v2
-from object_detection.utils import config_util
+from models.research.object_detection import model_lib_v2
+from models.research.object_detection.utils import config_util
 import mlflow
 import os
 from dotenv import load_dotenv

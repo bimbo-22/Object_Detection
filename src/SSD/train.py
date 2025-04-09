@@ -6,14 +6,9 @@ import yaml
 from dotenv import load_dotenv
 import mlflow
 
-# Set up paths for TensorFlow Object Detection API
-base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-research_dir = os.path.join(base_dir, 'models', 'research')
-sys.path.insert(0, research_dir)
-
-from object_detection import model_lib_v2
-from object_detection.utils import config_util
-from object_detection.protos import pipeline_pb2
+from models.research.object_detection import model_lib_v2
+from models.research.object_detection.utils import config_util
+from models.research.object_detection.protos import pipeline_pb2
 from google.protobuf import text_format
 
 # Load environment variables and parameters
@@ -27,10 +22,10 @@ mlflow_tracking_password = os.getenv("MLFLOW_TRACKING_PASSWORD")
 def update_pipeline_config(pipeline_config, mode, num_steps, pretrained_model_dir=None, optimized_params=None):
     train_config = pipeline_config.train_config
     
-    # Set the fine-tune checkpoint type (already in your config)
+   
     train_config.fine_tune_checkpoint_type = "detection"
     
-    # Adjust number of classes if needed (example: 5 as per your config)
+    
     pipeline_config.model.ssd.num_classes = 5
     
     # Access the learning rate config

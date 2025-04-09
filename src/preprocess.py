@@ -8,8 +8,8 @@ from object_detection.utils import dataset_util
 import argparse
 import sys
 import os
-# Add 'models/research' to the Python path, relative to the script’s location
-sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'models', 'research'))
+
+
 
 # Load the entire params.yaml
 params = yaml.safe_load(open('params.yaml'))

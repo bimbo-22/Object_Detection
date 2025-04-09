@@ -1,10 +1,10 @@
 YOLO:  
   preprocess:
     train:
-      input_images: 'datasets/raw/train/images'
-      input_labels: 'datasets/raw/train/labels'
-      output_images: 'datasets/processed/train/images'
-      output_labels: 'datasets/processed/train/labels'
+      input_images: 'datasets/YOLO/raw/train/images'
+      input_labels: 'datasets/YOLO/raw/train/labels'
+      output_images: 'datasets/YOLO/processed/train/images'
+      output_labels: 'datasets/YOLO/processed/train/labels'
   train: 
   data: 'yolo/data.yaml'
   model: models/yolo/fine-tune-(v8m).pt
@@ -12,12 +12,12 @@ YOLO:
 SSD:
   preprocess:
     train:
-      input_images: 'datasets/raw/train/images'
-      input_labels: 'datasets/raw/train/labels'
+      input_images: 'datasets/YOLO/raw/train/images'
+      input_labels: 'datasets/YOLO/raw/train/labels'
       output_tfrecord: 'datasets/ssd/processed/train.tfrecord'
     valid:
-      input_images: 'datasets/raw/valid/images'
-      input_labels: 'datasets/raw/valid/labels'
+      input_images: 'datasets/YOLO/raw/valid/images'
+      input_labels: 'datasets/YOLO/raw/valid/labels'
       output_tfrecord: 'datasets/ssd/raw/val.tfrecord'
   train:
     optimized:
