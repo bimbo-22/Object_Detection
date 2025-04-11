@@ -19,7 +19,7 @@ params = yaml.safe_load(open('params.yaml'))['train']
 mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 mlflow_tracking_username = os.getenv("MLFLOW_TRACKING_USERNAME")
 mlflow_tracking_password = os.getenv("MLFLOW_TRACKING_PASSWORD")
-
+ 
             
             
 def train_model(model_path,data_path, mode, config_path=None):

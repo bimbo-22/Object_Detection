@@ -1,28 +1,19 @@
-YOLO:  
+YOLO:
   preprocess:
     train:
       input_images: 'datasets/YOLO/raw/train/images'
       input_labels: 'datasets/YOLO/raw/train/labels'
       output_images: 'datasets/YOLO/processed/train/images'
       output_labels: 'datasets/YOLO/processed/train/labels'
-  train: 
-  data: 'yolo/data.yaml'
-  model: models/yolo/fine-tune-(v8m).pt
+  train:
+    data: 'yolo/data.yaml'
+    model: 'models/yolo/fine-tune-(v8m).pt'
 
 SSD:
-  preprocess:
-    train:
-      input_images: 'datasets/YOLO/raw/train/images'
-      input_labels: 'datasets/YOLO/raw/train/labels'
-      output_tfrecord: 'datasets/ssd/processed/train.tfrecord'
-    valid:
-      input_images: 'datasets/YOLO/raw/valid/images'
-      input_labels: 'datasets/YOLO/raw/valid/labels'
-      output_tfrecord: 'datasets/ssd/raw/val.tfrecord'
   train:
-    optimized:
-      learning_rate: 0.01
-      batch_size: 32
-  
-
-
+    data: 'yolo/data.yaml'
+    model: 'ssdlite320_mobilenet_v3_large'
+    num_classes: 6  # 5 classes + background
+    epochs: 50
+    batch: 16
+    lr: 0.001
