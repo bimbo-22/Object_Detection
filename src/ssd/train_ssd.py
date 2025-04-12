@@ -11,18 +11,14 @@ from torch.utils.data import DataLoader
 from torchmetrics.detection.mean_ap import MeanAveragePrecision
 from functools import partial
 import torchmetrics
-import time  # For timing
+import time
 
-# Debug: Check torchmetrics path and version
 print(f"Using torchmetrics from: {torchmetrics.__file__}")
 print(f"torchmetrics version: {torchmetrics.__version__}")
 
 from dotenv import load_dotenv
 load_dotenv()
-mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
-mlflow_tracking_username = os.getenv("MLFLOW_TRACKING_USERNAME")
-mlflow_tracking_password = os.getenv("MLFLOW_TRACKING_PASSWORD")
-mlflow.set_tracking_uri(mlflow_tracking_uri)
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI"))
 
 params = yaml.safe_load(open('params.yaml'))['SSD']['train']
 
@@ -35,7 +31,10 @@ def train_model(data_yaml, model_name, num_classes, mode, config_path=None, devi
         train_params = {
             "epochs": params.get('epochs', 50),
             "batch_size": params.get('batch', 16),
-            "lr": params.get('lr', 0.001)
+            "lr": params.get('lr', 0.001),
+            "optimizer": "SGD",  # Default optimizer
+            "momentum": 0.9,  # Default for SGD
+            "weight_decay": 0.0005  # Default
         }
         if mode == "fine-tune":
             train_params["freeze_backbone"] = True
@@ -60,7 +59,7 @@ def train_model(data_yaml, model_name, num_classes, mode, config_path=None, devi
             num_classes=num_classes,
             norm_layer=partial(torch.nn.BatchNorm2d, eps=1e-3, momentum=0.03)
         )
-        if mode == "fine-tune":
+        if mode == "fine-tune" and train_params.get("freeze_backbone", False):
             for param in model.backbone.parameters():
                 param.requires_grad = False
         model.to(device)
@@ -70,7 +69,17 @@ def train_model(data_yaml, model_name, num_classes, mode, config_path=None, devi
         train_loader = DataLoader(train_dataset, batch_size=train_params["batch_size"], shuffle=True, collate_fn=collate_fn)
         val_loader = DataLoader(val_dataset, batch_size=train_params["batch_size"], shuffle=False, collate_fn=collate_fn)
 
-        optimizer = torch.optim.SGD(model.parameters(), lr=train_params["lr"], momentum=0.9, weight_decay=0.0005)
+        # Choose optimizer dynamically based on config
+        if train_params["optimizer"] == "AdamW":
+            optimizer = torch.optim.AdamW(model.parameters(), lr=train_params["lr"], weight_decay=train_params.get("weight_decay", 0.0005))
+        else:  # Default to SGD
+            optimizer = torch.optim.SGD(
+                model.parameters(),
+                lr=train_params["lr"],
+                momentum=train_params.get("momentum", 0.9),
+                weight_decay=train_params.get("weight_decay", 0.0005)
+            )
+
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.1)
 
         best_map = 0
