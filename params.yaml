@@ -6,12 +6,12 @@ YOLO:
       output_images: 'datasets/YOLO/processed/train/images'
       output_labels: 'datasets/YOLO/processed/train/labels'
   train:
-    data: 'yolo/data.yaml'
-    model: 'models/yolo/fine-tune-(v8m).pt'
+    data: 'src/yolo/data.yaml'
+    model: 'models/YOLO/fine-tune-(v8m).pt'
 
 SSD:
   train:
-    data: 'yolo/data.yaml'
+    data: 'src/yolo/data.yaml'
     model: 'ssdlite320_mobilenet_v3_large'
     num_classes: 6  # 5 classes + background
     epochs: 50
