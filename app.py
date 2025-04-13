@@ -23,13 +23,37 @@ def load_model(model_type, model_version):
         model_path = params['YOLO']['base_model'] if model_version == "Base" else params['YOLO']['optimized_model']
         return YOLO(model_path)
     elif model_type == "SSD":
-        if model_version == "Base":
-            model = detection.ssdlite320_mobilenet_v3_large(pretrained=True)
-        else:
-            model = detection.ssdlite320_mobilenet_v3_large(weights=None)
-            model.load_state_dict(torch.load(params['SSD']['optimized_model']))
+        # Create the model with the correct configuration
+        width_mult = params['SSD']['train']['width_mult'] 
+        num_classes = params['SSD']['train']['num_classes']  
+        model = detection.ssdlite320_mobilenet_v3_large(
+            weights=None,  # No pretrained weights; we'll load custom weights
+            width_mult=width_mult,
+            num_classes=num_classes
+        )
+        # Determine the weights path based on the version
+        weights_path = params['SSD']['base_model'] if model_version == "Base" else params['SSD']['optimized_model']
+        # Load the weights
+        device = torch.device('cpu')
+        model.load_state_dict(torch.load(weights_path, map_location=device))
+        # Set to evaluation mode
         model.eval()
+        # Ensure model is on CPU
+        model.to(device)
+        checkpoint = torch.load(params['SSD']['optimized_model'], map_location='cpu')
+        checkpoint = torch.load(weights_path, map_location='cpu')
+        for key, value in checkpoint.items():
+            print(key, value.shape)
+
         return model
+
+# Resize image while maintaining aspect ratio
+def resize_image(image, max_size=640):
+    """Downscale image for faster CPU processing."""
+    h, w = image.shape[:2]
+    scale = min(max_size / w, max_size / h)
+    new_w, new_h = int(w * scale), int(h * scale)
+    return cv2.resize(image, (new_w, new_h))
 
 # Standardize detection results
 def get_detections(model, image, model_type, confidence, selected_classes):
@@ -52,7 +76,7 @@ def get_detections(model, image, model_type, confidence, selected_classes):
             outputs = model(image_tensor)[0]
         detections = []
         for i in range(len(outputs['scores'])):
-            class_id = int(outputs['labels'][i])
+            class_id = int(outputs['labels'][i]) - 1  # SSD labels start from 1 (0 is background)
             if outputs['scores'][i] > confidence and class_id in selected_classes:
                 box = outputs['boxes'][i].tolist()
                 detections.append({
@@ -83,42 +107,61 @@ def count_detections(detections, class_names):
         counts[label] = counts.get(label, 0) + 1
     return counts
 
-# Process video files with progress bar
+# Process video files with progress bar and frame skipping
 def process_video(video_path, model, model_type, confidence, class_names, selected_classes):
-    """Process a video and return the annotated video path, detections, and FPS with progress bar."""
+    """Process a video with frame skipping and return the annotated video path, detections, and FPS."""
     cap = cv2.VideoCapture(video_path)
     width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = cap.get(cv2.CAP_PROP_FPS)
     frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    
+    # Downscale video frames
+    max_size = 640  # Reduce resolution for faster processing
+    scale = min(max_size / width, max_size / height)
+    new_width, new_height = int(width * scale), int(height * scale)
+    
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.mp4')
-    out = cv2.VideoWriter(temp_file.name, cv2.VideoWriter_fourcc(*'mp4v'), fps, (width, height))
+    out = cv2.VideoWriter(temp_file.name, cv2.VideoWriter_fourcc(*'mp4v'), fps, (new_width, new_height))
     all_detections = []
     progress_bar = st.progress(0)
     frame_times = []
+    frame_skip = 5  # Process every 5th frame to reduce CPU load
+    processed_frames = 0
     
     with st.spinner("Processing video..."):
         for i in range(frame_count):
-            start_time = time.time()
             ret, frame = cap.read()
             if not ret:
                 break
+            if i % frame_skip != 0:  # Skip frames
+                continue
+            start_time = time.time()
+            # Downscale frame
+            frame = cv2.resize(frame, (new_width, new_height))
             detections = get_detections(model, frame, model_type, confidence, selected_classes)
             all_detections.extend(detections)
             annotated_frame = draw_boxes(frame.copy(), detections, class_names, confidence)
             out.write(annotated_frame)
             frame_times.append(time.time() - start_time)
-            progress_bar.progress((i + 1) / frame_count)
+            processed_frames += 1
+            progress_bar.progress(min((i + 1) / frame_count, 1.0))
+            # Write the same annotated frame for skipped frames to maintain video length
+            for _ in range(frame_skip - 1):
+                if i + 1 < frame_count:
+                    out.write(annotated_frame)
+                    i += 1
     cap.release()
     out.release()
-    avg_fps = len(frame_times) / sum(frame_times) if frame_times else 0
+    avg_fps = processed_frames / sum(frame_times) if frame_times else 0
     return temp_file.name, all_detections, avg_fps
 
-
+# Main app function
 def main():
-    st.title("Object Detection Model Tester")
+    st.title("Object Detection Model APP")
     st.write("Test YOLO and SSD models on images, videos, or YouTube links.")
-
+    
+    
     # Sidebar controls
     st.sidebar.title("Settings")
     model_type = st.sidebar.selectbox("Select Model", ["YOLO", "SSD"])
@@ -127,6 +170,7 @@ def main():
     confidence = st.sidebar.slider("Confidence Threshold", 0.0, 1.0, 0.5, 0.01)
     selected_class_names = st.sidebar.multiselect("Select Classes to Detect", params['class_names'], default=params['class_names'])
     run_button = st.sidebar.button("Run Inference")
+    
 
     # Map selected class names to indices
     class_names = params['class_names']
@@ -139,7 +183,10 @@ def main():
     st.sidebar.write("**About Models:**")
     st.sidebar.write("- [YOLOv8](https://github.com/ultralytics/ultralytics): Fast and accurate object detection.")
     st.sidebar.write("- [SSD](https://pytorch.org/vision/stable/models.html): Single Shot Detector, lightweight.")
-
+    
+    st.sidebar.write("### Read the paper ###")
+    ## link to my thesis
+    st.sidebar.write("- [Object Detection for Security Camera System]()")
     # Handle different input types
     if input_type == "Image":
         uploaded_file = st.file_uploader("Upload Image (max 200MB)", type=['jpg', 'jpeg', 'png'])
@@ -149,17 +196,21 @@ def main():
             else:
                 start_time = time.time()
                 image = Image.open(uploaded_file)
-                st.image(image, caption="Uploaded Image", use_column_width=True)
+                st.image(image, caption="Uploaded Image", use_container_width=True)
                 image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+                # Downscale image
+                image_cv = resize_image(image_cv, max_size=640)
                 with st.spinner("Running inference..."):
                     detections = get_detections(model, image_cv, model_type, confidence, selected_classes)
                     annotated_image = draw_boxes(image_cv.copy(), detections, class_names, confidence)
-                st.image(annotated_image, caption="Detection Results", use_column_width=True)
+                    annotated_image_rgb = cv2.cvtColor(annotated_image, cv2.COLOR_BGR2RGB)
+                st.image(annotated_image_rgb, caption="Detection Results", use_container_width=True)
                 counts = count_detections(detections, class_names)
                 st.write("**Detected Classes:**", counts)
                 avg_conf = sum(d['confidence'] for d in detections) / len(detections) if detections else 0
                 st.write(f"**Average Confidence:** {avg_conf:.2f}")
                 st.write(f"**Inference Time:** {time.time() - start_time:.2f} seconds")
+                st.balloons()
                 # Download annotated image
                 annotated_image_path = "annotated_image.png"
                 cv2.imwrite(annotated_image_path, annotated_image)
@@ -184,6 +235,7 @@ def main():
                 st.write(f"**Average Confidence:** {avg_conf:.2f}")
                 st.write(f"**Processing Time:** {time.time() - start_time:.2f} seconds")
                 st.write(f"**Frames Per Second:** {avg_fps:.2f}")
+                st.balloons()
                 # Download annotated video
                 with open(processed_video_path, "rb") as file:
                     st.download_button("Download Annotated Video", file, "annotated_video.mp4")
@@ -211,6 +263,7 @@ def main():
                     st.write(f"**Average Confidence:** {avg_conf:.2f}")
                     st.write(f"**Processing Time:** {time.time() - start_time:.2f} seconds")
                     st.write(f"**Frames Per Second:** {avg_fps:.2f}")
+                    st.balloons()
                     # Download annotated video
                     with open(processed_video_path, "rb") as file:
                         st.download_button("Download Annotated Video", file, "annotated_video.mp4")

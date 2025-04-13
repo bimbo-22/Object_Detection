@@ -7,14 +7,21 @@ YOLO:
       output_labels: 'datasets/YOLO/processed/train/labels'
   train:
     data: 'src/yolo/data.yaml'
-    model: 'models/YOLO/fine-tune-(v8m).pt'
+    model: 'models/YOLO/yolo_fine_tuned.pt'
+  base_model: "models/YOLO/yolo_fine_tuned.pt" 
+  optimized_model: "models/YOLO/best_yolo_optimized.pt"  
 
 SSD:
   train:
     data: 'src/yolo/data.yaml'
     model: 'ssdlite320_mobilenet_v3_large'
-    model_path: 'models/ssd/best_ssd_model.pth'
     num_classes: 6  # 5 classes + background
+    width_mult: 1.0
     epochs: 50
     batch: 16
     lr: 0.001
+  base_model: 'models/ssd/best_ssd_model.pth'
+  optimized_model: "models/ssd/best_optimized_ssd_model.pth"  # Optimized SSD model from training
+
+# Class names from data.yaml (shared across YOLO and SSD)
+class_names: ['bus', 'car', 'motorcycle', 'person', 'truck']
