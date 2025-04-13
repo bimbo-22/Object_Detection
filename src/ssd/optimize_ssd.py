@@ -18,6 +18,7 @@ print(f"torchmetrics version: {torchmetrics.__version__}")
 
 from dotenv import load_dotenv
 
+# Load environment variables for MLflow
 load_dotenv()
 mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 mlflow_tracking_username = os.getenv("MLFLOW_TRACKING_USERNAME")
@@ -25,8 +26,10 @@ mlflow_tracking_password = os.getenv("MLFLOW_TRACKING_PASSWORD")
 
 mlflow.set_tracking_uri(mlflow_tracking_uri)
 
+# Load parameters from params.yaml
 params = yaml.safe_load(open('params.yaml'))['SSD']['train']
 
+# Set device
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 def collate_fn(batch):
@@ -83,22 +86,22 @@ def log_images(images, targets, preds, prefix, num_images=3):
         mlflow.log_artifact(combined_path, f"{prefix}_images")
 
 def objective(trial):
-   
+    # Hyperparameters to optimize
     lr = trial.suggest_float("lr", 0.0001, 0.01, log=True)
     batch_size = trial.suggest_categorical("batch_size", [8, 16, 32])
     epochs = trial.suggest_int("epochs", 10, 50, step=10)
     momentum = trial.suggest_float("momentum", 0.85, 0.95)
     weight_decay = trial.suggest_float("weight_decay", 1e-5, 1e-3, log=True)
-    optimizer = trial.suggest_categorical("optimizer", ["SGD",  "AdamW"])
+    optimizer_name = trial.suggest_categorical("optimizer", ["SGD", "AdamW"])
 
     with mlflow.start_run(run_name=f"SSD_Optuna_Trial_{trial.number}"):
-        
+        # Log hyperparameters to MLflow
         mlflow.log_param("lr", lr)
         mlflow.log_param("batch_size", batch_size)
         mlflow.log_param("epochs", epochs)
         mlflow.log_param("momentum", momentum)
         mlflow.log_param("weight_decay", weight_decay)
-        mlflow.log_param("optimizer", optimizer)
+        mlflow.log_param("optimizer", optimizer_name)
         mlflow.log_param("model_name", "ssdlite320_mobilenet_v3_large")
         mlflow.log_param("num_classes", params["num_classes"])
         mlflow.log_param("data_yaml", params["data"])
@@ -108,8 +111,11 @@ def objective(trial):
         mlflow.log_param("norm_layer_eps", 1e-3)
         mlflow.log_param("norm_layer_momentum", 0.03)
 
-        # Model setup
-        model = ssdlite320_mobilenet_v3_large(weights=SSDLite320_MobileNet_V3_Large_Weights.DEFAULT)
+        # Model setup: Initialize without default weights to avoid mismatch
+        model = ssdlite320_mobilenet_v3_large(
+            weights=None,           # Prevent loading full SSD pretrained weights
+            weights_backbone=None   # Prevent loading default MobileNetV3 weights
+        )
         in_channels = [module[0][0].in_channels for module in model.head.classification_head.module_list]
         num_anchors = model.anchor_generator.num_anchors_per_location()
         model.head.classification_head = SSDLiteClassificationHead(
@@ -118,13 +124,17 @@ def objective(trial):
             num_classes=params["num_classes"],
             norm_layer=partial(torch.nn.BatchNorm2d, eps=1e-3, momentum=0.03)
         )
+
+        # Load the fine-tuned model weights
+        fine_tuned_path = "models/ssd/best_ssd_model.pth"
+        model.load_state_dict(torch.load(fine_tuned_path))
         model.to(device)
 
         # Dataset and DataLoader
         train_dataset = SSDDataset(params["data"], split='train', transform=train_transform)
         val_dataset = SSDDataset(params["data"], split='val', transform=val_transform)
-        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn)
-        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn)
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, collate_fn=collate_fn,num_workers=16)
+        val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False, collate_fn=collate_fn,num_workers=16)
 
         # Log dataset sizes
         mlflow.log_param("train_dataset_size", len(train_dataset))
@@ -132,8 +142,20 @@ def objective(trial):
         mlflow.log_param("num_train_batches", len(train_loader))
         mlflow.log_param("num_val_batches", len(val_loader))
 
-        # Optimizer
-        optimizer = torch.optim.SGD(model.parameters(), lr=lr, momentum=momentum, weight_decay=weight_decay)
+        # Optimizer setup
+        if optimizer_name == "SGD":
+            optimizer = torch.optim.SGD(
+                model.parameters(),
+                lr=lr,
+                momentum=momentum,
+                weight_decay=weight_decay
+            )
+        else:  # AdamW
+            optimizer = torch.optim.AdamW(
+                model.parameters(),
+                lr=lr,
+                weight_decay=weight_decay
+            )
 
         # Training loop with image logging
         for epoch in range(epochs):
@@ -186,6 +208,12 @@ def objective(trial):
         mlflow.log_metric("mAP50", mAP50)
         mlflow.log_metric("mAP", mAP)
 
+        # Save the model for this trial (to retrieve the best later)
+        trial_model_path = f"models/ssd/trial_{trial.number}_model.pth"
+        os.makedirs(os.path.dirname(trial_model_path), exist_ok=True)
+        torch.save(model.state_dict(), trial_model_path)
+        mlflow.log_artifact(trial_model_path)
+
     return mAP50
 
 if __name__ == "__main__":
@@ -198,18 +226,42 @@ if __name__ == "__main__":
         direction="maximize",
         pruner=optuna.pruners.MedianPruner(n_startup_trials=3, n_warmup_steps=5)
     )
-    study.optimize(objective, n_trials=20)
+    study.optimize(objective, n_trials=10)
 
+    # After optimization, log the best trial and save the best model
     with mlflow.start_run(run_name="SSD_Optuna_Best"):
         best_params = study.best_params
+        best_value = study.best_value
+        best_trial = study.best_trial
+
+        # Log best parameters and metrics
         mlflow.log_params(best_params)
-        mlflow.log_metric("best_mAP50", study.best_value)
-        
+        mlflow.log_metric("best_mAP50", best_value)
+
+        # Save best parameters to YAML
         best_params_file = "results/best_ssd_params.yaml"
         os.makedirs("results", exist_ok=True)
         with open(best_params_file, "w") as f:
             yaml.dump(best_params, f)
         mlflow.log_artifact(best_params_file)
 
+        # Save the best model
+        best_model_path = "models/ssd/best_optimized_ssd_model.pth"
+        trial_model_path = f"models/ssd/trial_{best_trial.number}_model.pth"
+        if os.path.exists(trial_model_path):
+            # Load the best trial's model and save it as the best model
+            model = ssdlite320_mobilenet_v3_large(weights=None, weights_backbone=None)
+            in_channels = [module[0][0].in_channels for module in model.head.classification_head.module_list]
+            num_anchors = model.anchor_generator.num_anchors_per_location()
+            model.head.classification_head = SSDLiteClassificationHead(
+                in_channels=in_channels,
+                num_anchors=num_anchors,
+                num_classes=params["num_classes"],
+                norm_layer=partial(torch.nn.BatchNorm2d, eps=1e-3, momentum=0.03)
+            )
+            model.load_state_dict(torch.load(trial_model_path))
+            torch.save(model.state_dict(), best_model_path)
+            mlflow.log_artifact(best_model_path)
+
     print("Best parameters:", best_params)
-    print("Best mAP50:", study.best_value)
+    print("Best mAP50:", best_value)

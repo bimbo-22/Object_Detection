@@ -66,8 +66,8 @@ def train_model(data_yaml, model_name, num_classes, mode, config_path=None, devi
 
         train_dataset = SSDDataset(data_yaml, split='train', transform=train_transform)
         val_dataset = SSDDataset(data_yaml, split='val', transform=val_transform)
-        train_loader = DataLoader(train_dataset, batch_size=train_params["batch_size"], shuffle=True, collate_fn=collate_fn)
-        val_loader = DataLoader(val_dataset, batch_size=train_params["batch_size"], shuffle=False, collate_fn=collate_fn)
+        train_loader = DataLoader(train_dataset, batch_size=train_params["batch_size"], shuffle=True, collate_fn=collate_fn,num_workers=16)
+        val_loader = DataLoader(val_dataset, batch_size=train_params["batch_size"], shuffle=False, collate_fn=collate_fn,num_workers=16)
 
         # Choose optimizer dynamically based on config
         if train_params["optimizer"] == "AdamW":

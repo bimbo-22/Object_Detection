@@ -18,8 +18,9 @@ optuna-integration
 argparse
 pyyaml
 torchvision
-
-
+pycocotools
+faster-coco-eval
+torchmetrics[detection]
 # step 1
 # preprocess.py
 # get data from either of two sources and compare

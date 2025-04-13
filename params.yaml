@@ -13,6 +13,7 @@ SSD:
   train:
     data: 'src/yolo/data.yaml'
     model: 'ssdlite320_mobilenet_v3_large'
+    model_path: 'models/ssd/best_ssd_model.pth'
     num_classes: 6  # 5 classes + background
     epochs: 50
     batch: 16

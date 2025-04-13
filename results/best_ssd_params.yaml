@@ -1,10 +1,6 @@
-lr: 0.008423338293706395
 batch_size: 32
-epochs: 40
-momentum: 0.8777360588258446
-weight_decay: 0.00047442787096339155
-optimizer: "AdamW"
-model_name: "ssdlite320_mobilenet_v3_large"
-device: "cuda"
-num_classes: 6
-data_yaml: "src/yolo/data.yaml"
+epochs: 10
+lr: 0.00024077738742521953
+momentum: 0.8575392220279279
+optimizer: AdamW
+weight_decay: 0.00023325387083568524
