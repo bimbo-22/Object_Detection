@@ -12,6 +12,7 @@ import yaml
 from ultralytics import YOLO
 from functools import partial
 import torchvision.ops as ops
+from collections import defaultdict
 
 # Load parameters from params.yaml
 with open('params.yaml', 'r') as f:
@@ -80,30 +81,39 @@ def apply_nms(boxes, scores, iou_threshold=0.5):
 def get_detections(model, image, model_type, confidence, selected_classes):
     if model_type == "YOLO":
         results = model.predict(image, conf=confidence)
-        detections = []
-        # Iterate over each detection result in the first image's boxes.
+        raw_detections = []
         for box_obj in results[0].boxes:
-            # Ensure we have a detection with valid data.
             try:
                 class_id = int(box_obj.cls)
                 if class_id not in selected_classes:
                     continue
                 conf = float(box_obj.conf)
-                # Use detach() and flatten to get a 1D array of coordinates.
+                # Ensure box_obj.xyxy returns a flat list of 4 numbers.
                 coords = box_obj.xyxy.detach().cpu().numpy().flatten().tolist()
-                # Check that we have 4 coordinates
                 if len(coords) != 4:
-                    st.warning(f"Skipping detection with invalid box length: {len(coords)}")
+                    # Skip the detection if it doesn't have exactly 4 coordinates.
                     continue
-                detections.append({
+                raw_detections.append({
                     'class_id': class_id,
                     'confidence': conf,
-                    'box': [int(x) for x in coords]
+                    'box': coords
                 })
             except Exception as e:
-                st.error(f"Error processing a YOLO box: {e}")
+                # Optionally log or ignore errors in processing a detection.
                 continue
-        return detections
+
+        # Apply NMS per class
+        final_detections = []
+        groups = defaultdict(list)
+        for det in raw_detections:
+            groups[det['class_id']].append(det)
+        for cls, det_list in groups.items():
+            boxes = torch.tensor([d['box'] for d in det_list], dtype=torch.float32)
+            scores = torch.tensor([d['confidence'] for d in det_list], dtype=torch.float32)
+            keep = apply_nms(boxes, scores, iou_threshold=0.5)
+            for idx in keep:
+                final_detections.append(det_list[idx])
+        return final_detections
     elif model_type == "SSD":
         image_tensor = torch.from_numpy(image.transpose(2, 0, 1)).float().div(255.0).unsqueeze(0)
         with torch.no_grad():
@@ -132,14 +142,30 @@ def get_detections(model, image, model_type, confidence, selected_classes):
 
 # Draw bounding boxes on the image.
 def draw_boxes(image, detections, class_names, confidence):
+    """Draw bounding boxes and labels on the image."""
+    color_map = {
+        'bus': (255, 0, 0),          # Blue
+        'car': (0, 255, 0),          # Green
+        'motorcycle': (0, 0, 255),   # Red
+        'person': (0, 255, 255),     # Yellow
+        'truck': (255, 0, 255)       # Magenta
+    }
     for det in detections:
         if det['confidence'] >= confidence:
             box = det['box']
-            label = class_names[det['class_id']] if det['class_id'] < len(class_names) else "Unknown"
-            cv2.rectangle(image, (box[0], box[1]), (box[2], box[3]), (0, 255, 0), 2)
-            cv2.putText(image, f"{label}: {det['confidence']:.2f}", (box[0], box[1]-10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            # Ensure the detection box is a list of 4 numbers.
+            if not isinstance(box, (list, tuple)) or len(box) != 4:
+                continue
+            # Get the class name and look up the color. If not found, default to white.
+            class_id = det['class_id']
+            class_label = class_names[class_id] if class_id < len(class_names) else "Unknown"
+            color = color_map.get(class_label, (255, 255, 255))
+            # Draw bounding box and label with the specific color.
+            cv2.rectangle(image, (int(box[0]), int(box[1])), (int(box[2]), int(box[3])), color, 2)
+            cv2.putText(image, f"{class_label}: {det['confidence']:.2f}", (int(box[0]), int(box[1]) - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
     return image
+
 
 def count_detections(detections, class_names):
     counts = {}
