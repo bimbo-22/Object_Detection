@@ -24,18 +24,15 @@ def load_model(model_type, model_version):
         return YOLO(model_path)
     elif model_type == "SSD":
         # Create the model with the correct configuration
-        width_mult = params['SSD']['train']['width_mult'] 
         num_classes = params['SSD']['train']['num_classes']  
         model = detection.ssdlite320_mobilenet_v3_large(
-            weights=None,  # No pretrained weights; we'll load custom weights
-            width_mult=width_mult,
             num_classes=num_classes
         )
         # Determine the weights path based on the version
         weights_path = params['SSD']['base_model'] if model_version == "Base" else params['SSD']['optimized_model']
         # Load the weights
         device = torch.device('cpu')
-        model.load_state_dict(torch.load(weights_path, map_location=device))
+        model.load_state_dict(torch.load(weights_path, map_location=device), strict = False)
         # Set to evaluation mode
         model.eval()
         # Ensure model is on CPU
