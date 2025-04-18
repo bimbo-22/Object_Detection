@@ -7,15 +7,16 @@ YOLO:
       output_labels: 'datasets/YOLO/processed/train/labels'
   train:
     data: 'src/yolo/data.yaml'
-    model: 'models/YOLO/yolo_fine_tuned.pt'
-  base_model: "models/YOLO/yolo_fine_tuned.pt" 
+    fine_tuned_model: 'models/YOLO/yolo_fine_tuned.pt'
+  fine_tuned_model: "models/YOLO/yolo_fine_tuned.pt" 
   optimized_model: "models/YOLO/best_yolo_optimized.pt"  
 
 SSD:
   train:
     data: 'src/yolo/data.yaml'
     model: 'ssdlite320_mobilenet_v3_large'
-    num_classes: 6  # 5 classes + background
+    num_classes: 6  # 5 classes + background (0 reserved for background)
+    width_mult: 1.0
     epochs: 50
     batch: 16
     lr: 0.001
