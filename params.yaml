@@ -7,8 +7,8 @@ YOLO:
       output_labels: 'datasets/YOLO/processed/train/labels'
   train:
     data: 'src/yolo/data.yaml'
-    model: 'models/YOLO/yolo_fine_tuned.pt'
-  base_model: "models/YOLO/yolo_fine_tuned.pt" 
+    fine_tuned_model: 'models/YOLO/yolo_fine_tuned.pt'
+  fine_tuned_model: "models/YOLO/yolo_fine_tuned.pt" 
   optimized_model: "models/YOLO/best_yolo_optimized.pt"  
 
 SSD:
