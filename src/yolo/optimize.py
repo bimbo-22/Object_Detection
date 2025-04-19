@@ -14,7 +14,6 @@ mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 mlflow.set_tracking_uri(mlflow_tracking_uri)
 
 def objective(trial):
-    # Training hyperparameters
     lr0 = trial.suggest_float("lr0", 0.0003, 0.0007, log=True)
     lrf = trial.suggest_float("lrf", 0.00005, 0.001, log=True)
     epochs = trial.suggest_categorical("epochs", [50, 100])
@@ -24,16 +23,13 @@ def objective(trial):
     warmup_epochs = trial.suggest_int("warmup_epochs", 3, 5)
     momentum = trial.suggest_float("momentum", 0.9, 0.95)
     weight_decay = trial.suggest_float("weight_decay", 0.0005, 0.001)
-    freeze = trial.suggest_int("freeze", 0, 10)  # Add layer freezing
-
-    # Enhanced augmentation hyperparameters
     mosaic = trial.suggest_float("mosaic", 0.5, 1.0)
     mixup = trial.suggest_float("mixup", 0.5, 1.0)
     hsv_h = trial.suggest_float("hsv_h", 0.015, 0.05)
     hsv_s = trial.suggest_float("hsv_s", 0.2, 0.5)
     hsv_v = trial.suggest_float("hsv_v", 0.2, 0.5)
-    degrees = trial.suggest_float("degrees", 0.0, 15.0)  # Add rotation
-    translate = trial.suggest_float("translate", 0.0, 0.2)  # Add translation
+    degrees = trial.suggest_float("degrees", 0.0, 15.0)  
+    translate = trial.suggest_float("translate", 0.0, 0.2)  
 
     train_params = {
         "data": params['data'],
@@ -86,7 +82,7 @@ def objective(trial):
     return objective_value
 
 if __name__ == "__main__":
-    experiment_name = "optimizing_cctv_model_v2"
+    experiment_name = "optimizing_cctv_model_v3"
     study = optuna.create_study(direction="maximize", study_name=experiment_name, pruner=optuna.pruners.MedianPruner(n_warmup_steps=3))
     study.optimize(objective, n_trials=10)
     best_params = study.best_params
