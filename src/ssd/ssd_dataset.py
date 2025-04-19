@@ -23,15 +23,16 @@ class SSDDataset(Dataset):
         image_path = os.path.join(self.image_dir, self.image_files[idx])
         label_path = os.path.join(self.label_dir, os.path.splitext(self.image_files[idx])[0] + '.txt')
 
-        image = cv2.imread(image_path)
+        image = cv2.imread(image_path) 
+        if image is None:
+            raise ValueError(f"Failed to load image: {image_path}")
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         height, width = image.shape[:2]
 
         boxes, labels = self.load_labels(label_path, width, height)
 
         if self.transform:
-            # Convert boxes and labels to list forms for albumentations.
-            # Use .tolist() if they are torch tensors.
+
             boxes_list = boxes.tolist() if isinstance(boxes, torch.Tensor) else boxes
             labels_list = labels.tolist() if isinstance(labels, torch.Tensor) else labels
             transformed = self.transform(image=image, bboxes=boxes_list, class_labels=labels_list)
