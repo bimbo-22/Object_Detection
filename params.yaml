@@ -1,15 +1,16 @@
 YOLO:
-  preprocess:
-    train:
-      input_images: 'datasets/YOLO/raw/train/images'
-      input_labels: 'datasets/YOLO/raw/train/labels'
-      output_images: 'datasets/YOLO/processed/train/images'
-      output_labels: 'datasets/YOLO/processed/train/labels'
+  # preprocess:
+  #   train:
+  #     input_images: 'datasets/YOLO/raw/train/images'
+  #     input_labels: 'datasets/YOLO/raw/train/labels'
+  #     output_images: 'datasets/YOLO/processed/train/images'
+  #     output_labels: 'datasets/YOLO/processed/train/labels'
   train:
-    data: 'src/yolo/data.yaml'
+    data: 'data.yaml'
     fine_tuned_model: 'models/YOLO/yolo_fine_tuned.pt'
   fine_tuned_model: "models/YOLO/yolo_fine_tuned.pt" 
-  optimized_model: "models/YOLO/best_yolo_optimized.pt"  
+  optimized_model: "models/YOLO/optimized_with_best_params.pt"  
+  
 
 SSD:
   train:
