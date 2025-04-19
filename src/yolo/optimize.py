@@ -51,7 +51,7 @@ def objective(trial):
         "degrees": degrees,
         "translate": translate,
         "device": "cuda" if torch.cuda.is_available() else "cpu",
-        "project": "optimizing_cctv_model_v2",
+        "project": "optimizing_cctv_model_v2_round_2",
         "name": f'trial_{trial.number}',
         "save": True,
         "exist_ok": True
@@ -64,25 +64,27 @@ def objective(trial):
     # Train the model
     results = model.train(**train_params)
 
-    mAP50 = results.box.map50
-    precision = results.box.p
-    recall = results.box.r
-    f1_score = results.box.f1
-    iou = results.box.iou  # Assuming IoU is available
+    mAP50 = float(results.box.map50)
+    precision = float(results.box.p)
+    recall = float(results.box.r)
+    f1_score = float(results.box.f1)
 
-    # Log metrics to MLflow
+# Log metrics to MLflow
     mlflow.log_metric("mAP50", mAP50)
     mlflow.log_metric("precision", precision)
     mlflow.log_metric("recall", recall)
     mlflow.log_metric("f1_score", f1_score)
-    mlflow.log_metric("iou", iou)
 
     # Combined objective: balance mAP and recall
     objective_value = 0.7 * mAP50 + 0.3 * recall
     return objective_value
 
 if __name__ == "__main__":
+<<<<<<< HEAD
     experiment_name = "optimizing_cctv_model_v3"
+=======
+    experiment_name = "optimizing_cctv_model_v2_round_2"
+
     study = optuna.create_study(direction="maximize", study_name=experiment_name, pruner=optuna.pruners.MedianPruner(n_warmup_steps=3))
     study.optimize(objective, n_trials=10)
     best_params = study.best_params

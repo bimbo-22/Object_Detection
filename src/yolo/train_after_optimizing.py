@@ -7,7 +7,7 @@ import yaml
 
 
 load_dotenv()
-params = yaml.safe_load(open('params.yaml'))['train']
+params = yaml.safe_load(open('params.yaml'))["YOLO"]['train']
 mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 mlflow_tracking_username = os.getenv("MLFLOW_TRACKING_USERNAME")
 mlflow_tracking_password = os.getenv("MLFLOW_TRACKING_PASSWORD")
@@ -52,22 +52,7 @@ if __name__ == "__main__":
     print("Script is executing..........")
     
     
-    best_hyperparameters = {
-    'lr0': 0.0005906415419357465,
-    'lrf': 8.897493223633051e-05,
-    'epochs': 50,
-    'batch': 32,
-    'optimizer': 'SGD',
-    'imgsz': 640,
-    'warmup_epochs': 5,
-    'momentum': 0.9232124249680226,
-    'weight_decay': 0.0008132357503577005,
-    'mosaic': 0.5348898872083598,
-    'mixup': 0.3519106293530971,
-    'hsv_h': 0.027907848151362956,
-    'hsv_s': 0.19287164062335171,
-    'hsv_v': 0.0694866448664366
-}
+    best_hyperparameters = {'lr0': 0.0003607907643435112, 'lrf': 0.00028311971975011354, 'epochs': 100, 'batch': 16, 'optimizer': 'SGD', 'imgsz': 640, 'warmup_epochs': 5, 'momentum': 0.9096021120275781, 'weight_decay': 0.0009828580888491432, 'freeze': 6, 'mosaic': 0.7153414706667219, 'mixup': 0.7878849203353424, 'hsv_h': 0.04875261926444227, 'hsv_s': 0.2352382434877579, 'hsv_v': 0.26801170799883034, 'degrees': 2.4673416110009483, 'translate': 0.07847634126905222}
     
-    train_model(params['model'], params['data'], best_hyperparameters)
+    train_model(params['fine_tuned_model'], params['data'], best_hyperparameters)
     print("Training completed.")

@@ -66,8 +66,8 @@ def train_model(data_yaml, model_name, num_classes, mode, config_path=None, devi
 
         train_dataset = SSDDataset(data_yaml, split='train', transform=train_transform)
         val_dataset = SSDDataset(data_yaml, split='val', transform=val_transform)
-        train_loader = DataLoader(train_dataset, batch_size=train_params["batch_size"], shuffle=True, collate_fn=collate_fn,num_workers=16)
-        val_loader = DataLoader(val_dataset, batch_size=train_params["batch_size"], shuffle=False, collate_fn=collate_fn,num_workers=16)
+        train_loader = DataLoader(train_dataset, batch_size=train_params["batch_size"], shuffle=True, collate_fn=collate_fn, num_workers=16)
+        val_loader = DataLoader(val_dataset, batch_size=train_params["batch_size"], shuffle=False, collate_fn=collate_fn, num_workers=16)
 
         # Choose optimizer dynamically based on config
         if train_params["optimizer"] == "AdamW":
@@ -88,6 +88,8 @@ def train_model(data_yaml, model_name, num_classes, mode, config_path=None, devi
         for epoch in range(train_params["epochs"]):
             model.train()
             total_loss = 0
+            total_cls_loss = 0  # Added to track classification loss
+            total_bbox_loss = 0  # Added to track bounding box regression loss
             epoch_start_time = time.time()
             for i, (images, targets) in enumerate(train_loader):
                 batch_start_time = time.time()
@@ -96,6 +98,8 @@ def train_model(data_yaml, model_name, num_classes, mode, config_path=None, devi
                 loss_dict = model(images, targets)
                 losses = sum(loss for loss in loss_dict.values())
                 total_loss += losses.item()
+                total_cls_loss += loss_dict['classification'].item()  # Track classification loss
+                total_bbox_loss += loss_dict['bbox_regression'].item()  # Track bbox regression loss
 
                 optimizer.zero_grad()
                 losses.backward()
@@ -111,32 +115,62 @@ def train_model(data_yaml, model_name, num_classes, mode, config_path=None, devi
 
             scheduler.step()
             avg_loss = total_loss / num_batches
+            avg_cls_loss = total_cls_loss / num_batches  # Compute average classification loss
+            avg_bbox_loss = total_bbox_loss / num_batches  # Compute average bbox regression loss
             epoch_time = time.time() - epoch_start_time
             mlflow.log_metric("train_loss", avg_loss, step=epoch)
+            mlflow.log_metric("train_cls_loss", avg_cls_loss, step=epoch)  # Log classification loss
+            mlflow.log_metric("train_bbox_loss", avg_bbox_loss, step=epoch)  # Log bbox regression loss
             print(f"Epoch [{epoch+1}/{train_params['epochs']}] completed, "
-                  f"Avg Loss: {avg_loss:.4f}, Time: {epoch_time:.2f}s")
+                  f"Avg Loss: {avg_loss:.4f} (Cls: {avg_cls_loss:.4f}, BBox: {avg_bbox_loss:.4f}), "
+                  f"Time: {epoch_time:.2f}s")
 
             model.eval()
             metric = MeanAveragePrecision(max_detection_thresholds=[1, 100, 500])
+            val_total_loss = 0  # Added to track validation loss
+            val_total_cls_loss = 0  # Added for validation classification loss
+            val_total_bbox_loss = 0  # Added for validation bbox regression loss
+            num_val_batches = len(val_loader)
             with torch.no_grad():
                 for images, targets in val_loader:
                     images = list(img.to(device) for img in images)
+                    targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
+                    # Compute validation loss
+                    model.train()  # Temporarily set to train mode to get loss
+                    loss_dict = model(images, targets)
+                    val_losses = sum(loss for loss in loss_dict.values())
+                    val_total_loss += val_losses.item()
+                    val_total_cls_loss += loss_dict['classification'].item()
+                    val_total_bbox_loss += loss_dict['bbox_regression'].item()
+                    model.eval()  # Back to eval mode for predictions
                     outputs = model(images)
                     preds = [{'boxes': o['boxes'].cpu(), 'scores': o['scores'].cpu(), 'labels': o['labels'].cpu()} for o in outputs]
                     targets = [{'boxes': t['boxes'].cpu(), 'labels': t['labels'].cpu()} for t in targets]
                     metric.update(preds, targets)
                 map_dict = metric.compute()
-                mAP = map_dict['map'].item()
+                mAP = map_dict['map'].item()  # mAP50-95
                 mAP50 = map_dict['map_50'].item()
-            mlflow.log_metric("mAP", mAP, step=epoch)
+                precision = map_dict['precisions'].mean().item() if 'precisions' in map_dict else 0.0  # Compute average precision
+                recall = map_dict['recalls'].mean().item() if 'recalls' in map_dict else 0.0  # Compute average recall
+            avg_val_loss = val_total_loss / num_val_batches
+            avg_val_cls_loss = val_total_cls_loss / num_val_batches
+            avg_val_bbox_loss = val_total_bbox_loss / num_val_batches
+            mlflow.log_metric("val_loss", avg_val_loss, step=epoch)  # Log validation loss
+            mlflow.log_metric("val_cls_loss", avg_val_cls_loss, step=epoch)  # Log validation classification loss
+            mlflow.log_metric("val_bbox_loss", avg_val_bbox_loss, step=epoch)  # Log validation bbox regression loss
+            mlflow.log_metric("mAP50-95", mAP, step=epoch)  # Renamed for clarity
             mlflow.log_metric("mAP50", mAP50, step=epoch)
-            print(f"Validation - mAP: {mAP:.4f}, mAP@50: {mAP50:.4f}")
+            mlflow.log_metric("precision", precision, step=epoch)  # Log precision
+            mlflow.log_metric("recall", recall, step=epoch)  # Log recall
+            print(f"Validation - mAP50-95: {mAP:.4f}, mAP50: {mAP50:.4f}, "
+                  f"Precision: {precision:.4f}, Recall: {recall:.4f}, "
+                  f"Val Loss: {avg_val_loss:.4f} (Cls: {avg_val_cls_loss:.4f}, BBox: {avg_val_bbox_loss:.4f})")
 
             if mAP > best_map:
                 best_map = mAP
                 torch.save(model.state_dict(), "models/ssd/best_ssd_model.pth")
                 mlflow.log_artifact("models/ssd/best_ssd_model.pth")
-                print(f"New best mAP: {best_map:.4f}, model saved.")
+                print(f"New best mAP50-95: {best_map:.4f}, model saved.")
 
         tracking_uri_type = urlparse(mlflow.get_tracking_uri()).scheme
         if tracking_uri_type != "file":

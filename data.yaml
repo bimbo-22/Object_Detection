@@ -1,0 +1,13 @@
+train: YOLO/processed/train/images
+val:   YOLO/raw/valid/images
+test: YOLO/raw/test/images
+
+nc:    5
+names: ['bus','car','motorcycle','person','truck']
+
+roboflow:
+  workspace: thesis-d86qe
+  project: thesis-m0g1f-v1nm7
+  version: 1
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/thesis-d86qe/thesis-m0g1f-v1nm7/dataset/1
