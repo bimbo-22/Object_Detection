@@ -24,6 +24,8 @@ torchmetrics[detection]
 streamlit
 pillow
 yt-dlp
+opencv-python-headless
+
 # step 1
 # preprocess.py
 # get data from either of two sources and compare

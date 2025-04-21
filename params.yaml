@@ -9,8 +9,8 @@ YOLO:
 
     data: 'data.yaml'
     fine_tuned_model: 'models/YOLO/yolo_fine_tuned.pt'
-  fine_tuned_model: "models/YOLO/yolo_fine_tuned.pt" 
-  optimized_model: "models/YOLO/optimized_with_best_params.pt"  
+  base_model: "models/YOLO/fine_tuned_yolo_model.pt" 
+  optimized_model: "models/YOLO/best_yolo_optimized.pt"  
 
 
 SSD:

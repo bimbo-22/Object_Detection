@@ -219,7 +219,7 @@ def process_video(video_path, model, model_type, confidence, class_names, select
     return temp_file.name, all_detections, avg_fps
 
 def main():
-    st.title("Object Detection Model APP")
+    st.title("SecureDetect: Object Detection Model APP")
     st.write("Test YOLO and SSD models on images, videos, or YouTube links.")
     
     st.sidebar.title("Settings")

@@ -69,7 +69,7 @@ def train_model(data_yaml, model_name, num_classes, mode, config_path=None, devi
         train_loader = DataLoader(train_dataset, batch_size=train_params["batch_size"], shuffle=True, collate_fn=collate_fn, num_workers=16)
         val_loader = DataLoader(val_dataset, batch_size=train_params["batch_size"], shuffle=False, collate_fn=collate_fn, num_workers=16)
 
-        # Choose optimizer dynamically based on config
+        
         if train_params["optimizer"] == "AdamW":
             optimizer = torch.optim.AdamW(model.parameters(), lr=train_params["lr"], weight_decay=train_params.get("weight_decay", 0.0005))
         else:  # Default to SGD
