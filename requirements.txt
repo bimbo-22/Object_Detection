@@ -7,7 +7,7 @@ numpy
 pandas
 roboflow
 ultralytics
-opencv-python
+# opencv-python
 python-dotenv
 dagshub
 dvc
