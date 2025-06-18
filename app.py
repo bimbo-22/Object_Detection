@@ -23,7 +23,7 @@ with open('params.yaml', 'r') as f:
 def load_model(model_type, model_version):
     """Load the selected model (YOLO or SSD, base or optimized) from params.yaml."""
     if model_type == "YOLO":
-        model_path = params['YOLO']['initial_model'] if model_version == "Base" else params['YOLO']['optimized_model']
+        model_path = params['YOLO']['base_model'] if model_version == "Base" else params['YOLO']['optimized_model']
         return YOLO(model_path)
     elif model_type == "SSD":
         from torchvision.models.detection.ssdlite import SSDLiteClassificationHead
