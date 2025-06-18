@@ -23,7 +23,7 @@ with open('params.yaml', 'r') as f:
 def load_model(model_type, model_version):
     """Load the selected model (YOLO or SSD, base or optimized) from params.yaml."""
     if model_type == "YOLO":
-        model_path = params['YOLO']['base_model'] if model_version == "Base" else params['YOLO']['optimized_model']
+        model_path = params['YOLO']['initial_model'] if model_version == "Base" else params['YOLO']['optimized_model']
         return YOLO(model_path)
     elif model_type == "SSD":
         from torchvision.models.detection.ssdlite import SSDLiteClassificationHead
@@ -226,7 +226,7 @@ def main():
     model_type = st.sidebar.selectbox("Select Model", ["YOLO", "SSD"])
     model_version = st.sidebar.selectbox("Select Model Version", ["Base", "Optimized"])
     input_type = st.sidebar.selectbox("Select Input Type", ["Image", "Video", "YouTube"])
-    confidence = st.sidebar.slider("Confidence Threshold", 0.0, 1.0, 0.5, 0.01)
+    confidence = st.sidebar.slider("Confidence Threshold", 0.0, 1.0, 0.39, 0.01)
     selected_class_names = st.sidebar.multiselect("Select Classes to Detect", params['class_names'], default=params['class_names'])
     run_button = st.sidebar.button("Run Inference")
     
@@ -239,7 +239,7 @@ def main():
     st.sidebar.write("- [YOLOv8](https://github.com/ultralytics/ultralytics): Fast and accurate object detection.")
     st.sidebar.write("- [SSD](https://pytorch.org/vision/stable/models.html): Single Shot Detector, lightweight.")
     st.sidebar.write("### Read the paper ###")
-    st.sidebar.write("- [Object Detection for Security Camera System]():")
+    st.sidebar.write("- [Object Detection for Security Camera System](https://github.com/bimbo-22/Object_Detection/blob/main/thesis_paper/cs_2025_abimbola_mohammed_ogunsakin.pdf): This project is based on the thesis paper by Abimbola Mohammed Ogunsakin.")
     
     if input_type == "Image":
         uploaded_file = st.file_uploader("Upload Image (max 200MB)", type=['jpg', 'jpeg', 'png'])

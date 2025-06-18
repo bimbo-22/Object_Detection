@@ -81,7 +81,7 @@ def objective(trial):
 
 if __name__ == "__main__":
 
-    experiment_name = "optimizing_cctv_model_v3"
+    experiment_name = "optimizing_cctv_model_v2"
 
     study = optuna.create_study(direction="maximize", study_name=experiment_name, pruner=optuna.pruners.MedianPruner(n_warmup_steps=3))
     study.optimize(objective, n_trials=10)

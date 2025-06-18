@@ -11,6 +11,7 @@ YOLO:
     fine_tuned_model: 'models/YOLO/yolo_fine_tuned.pt'
   base_model: "models/YOLO/fine_tuned_yolo_model.pt" 
   optimized_model: "models/YOLO/best_yolo_optimized.pt"  
+  initial_model: "models/YOLO/initial_model.pt"
 
 
 SSD:
